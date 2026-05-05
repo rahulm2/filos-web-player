@@ -7,8 +7,12 @@ import posthog from "posthog-js";
 let initialized = false;
 function ensurePostHogInit() {
   if (initialized || typeof window === "undefined") return;
+  initialized = true; // mark early to prevent re-entry
   const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
-  if (!token) return;
+  if (!token) {
+    console.warn("[Analytics] No NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN — events will be no-ops");
+    return;
+  }
   posthog.init(token, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
     capture_pageview: false,
@@ -20,7 +24,6 @@ function ensurePostHogInit() {
       }
     },
   });
-  initialized = true;
 }
 
 type EventName =

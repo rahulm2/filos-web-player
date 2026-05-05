@@ -40,15 +40,20 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     const ctx = new Ctx();
     await ctx.resume();
 
-    // Prime audio element
+    // Prime audio element — play+pause unlocks iOS audio
+    // Must await play() before calling pause() to avoid AbortError
     audio.load();
     try {
-      await audio.play();
+      const playPromise = audio.play();
+      if (playPromise) {
+        await playPromise;
+        audio.pause();
+        audio.currentTime = 0;
+      }
     } catch {
-      // Expected
+      // Expected on browsers that block autoplay — element is still primed
+      audio.currentTime = 0;
     }
-    audio.pause();
-    audio.currentTime = 0;
 
     // Wire: source → analyser → gain → destination
     const source = ctx.createMediaElementSource(audio);
