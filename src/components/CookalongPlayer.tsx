@@ -55,8 +55,17 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   }, [pacing, cascade, engine, currentStep, track]);
 
   useMediaSession(plan, {
-    onPlay: () => pacing.dispatch({ type: "RESUME" }),
-    onPause: () => pacing.dispatch({ type: "PAUSE" }),
+    onPlay: () => {
+      // Directly resume audio — background state updates may not trigger effects
+      engine.resume();
+      isResuming.current = true;
+      pacing.dispatch({ type: "RESUME" });
+    },
+    onPause: () => {
+      engine.pause();
+      if (cascade.state.isRunning) cascade.pauseCascade();
+      pacing.dispatch({ type: "PAUSE" });
+    },
     onNext: () => handleNext(),
     onPrevious: () => pacing.dispatch({ type: "GO_BACK" }),
   });
