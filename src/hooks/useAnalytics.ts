@@ -18,6 +18,9 @@ function ensurePostHogInit() {
     capture_pageview: false,
     capture_pageleave: true,
     persistence: "localStorage",
+    disable_session_recording: true,
+    autocapture: false,
+    enable_heatmaps: false,
     loaded: (ph) => {
       if (process.env.NODE_ENV === "development") {
         console.log("[PostHog] initialized, distinct_id:", ph.get_distinct_id());
