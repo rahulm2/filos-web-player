@@ -120,6 +120,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     }
 
     if (pacing.state === "COMPLETE") {
+      engine.pause();
       track("session_complete", { recipe_title: plan.recipe.title, creator: plan.recipe.creator });
     }
 

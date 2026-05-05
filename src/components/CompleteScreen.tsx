@@ -82,9 +82,6 @@ export function CompleteScreen({ plan, onRestart }: { plan: PlaybackPlan; onRest
           <p className="mt-1 text-[13px] text-[#887B6C]">
             You just cooked with {plan.recipe.creator.split(" ")[0]}.
           </p>
-          <div className="mt-3">
-            <ShareButton variant="light" />
-          </div>
         </div>
 
         <div className="mt-6 h-[0.5px] bg-[#DDD5CB]" />
@@ -213,14 +210,15 @@ export function CompleteScreen({ plan, onRestart }: { plan: PlaybackPlan; onRest
 
         <div className="mt-8 h-[0.5px] bg-[#DDD5CB]" />
 
-        {/* Start again */}
-        <div className="mt-6 text-center">
+        {/* Actions */}
+        <div className="mt-6 flex items-center justify-center gap-3">
           <button
             onClick={onRestart}
             className="cursor-pointer rounded-[10px] border border-[#DDD5CB] px-6 py-3 text-[14px] font-medium text-[#2A231D] transition-all hover:border-[#C9944A] hover:text-[#C9944A] active:scale-[0.97]"
           >
             Cook this again
           </button>
+          <ShareButton variant="light" />
         </div>
       </div>
     </div>
