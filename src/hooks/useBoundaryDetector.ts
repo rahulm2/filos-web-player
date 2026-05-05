@@ -18,6 +18,10 @@ export function useBoundaryDetector(
     generationRef.current++;
     const gen = generationRef.current;
 
+    let raf: number;
+    let fallbackTimeout: ReturnType<typeof setTimeout>;
+    let seekConfirmed = false;
+
     const fire = () => {
       if (firedRef.current || gen !== generationRef.current) return;
       firedRef.current = true;
@@ -25,47 +29,41 @@ export function useBoundaryDetector(
       onBoundary();
     };
 
-    let raf: number;
-    let fallbackTimeout: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      if (firedRef.current || gen !== generationRef.current) return;
 
-    // Wait until the audio has actually seeked to our chunk's region
-    // before starting boundary detection. iOS seeking is async.
-    const waitForSeek = () => {
-      if (gen !== generationRef.current) return;
-
-      // Check if audio.currentTime is in our chunk's range (or close to start)
       const ct = audio.currentTime;
-      const inRange = ct >= startTime - 1 && ct <= endTime + 1;
 
-      if (!inRange) {
-        // Not seeked yet — keep waiting
-        raf = requestAnimationFrame(waitForSeek);
+      if (!seekConfirmed) {
+        // Wait until audio has seeked into our chunk range
+        if (ct >= startTime - 1 && ct <= endTime + 1) {
+          seekConfirmed = true;
+          // Now set the fallback timeout based on actual position
+          const rate = audio.playbackRate || 1;
+          const remaining = Math.max(0, ((endTime - ct) / rate) * 1000);
+          fallbackTimeout = setTimeout(() => {
+            if (firedRef.current || gen !== generationRef.current) return;
+            // Double-check position — only fire if genuinely at the end
+            if (audio.currentTime >= endTime - 0.3 && seekConfirmed) {
+              fire();
+            }
+          }, remaining + 300);
+        }
+        raf = requestAnimationFrame(tick);
         return;
       }
 
-      // Now start actual boundary detection
-      const tick = () => {
-        if (firedRef.current || gen !== generationRef.current) return;
-        if (!audio.paused && audio.currentTime >= endTime - 0.05) {
-          fire();
-          return;
-        }
-        raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
+      // Seek confirmed — check for boundary
+      // Use >= endTime (no early tolerance) to avoid cutting short on iOS
+      if (!audio.paused && ct >= endTime) {
+        fire();
+        return;
+      }
 
-      // setTimeout fallback for background tabs
-      const rate = audio.playbackRate || 1;
-      const remaining = Math.max(0, ((endTime - audio.currentTime) / rate) * 1000);
-      fallbackTimeout = setTimeout(() => {
-        if (firedRef.current || gen !== generationRef.current) return;
-        if (audio.currentTime >= endTime - 0.1) {
-          fire();
-        }
-      }, remaining + 500);
+      raf = requestAnimationFrame(tick);
     };
 
-    raf = requestAnimationFrame(waitForSeek);
+    raf = requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(raf);
