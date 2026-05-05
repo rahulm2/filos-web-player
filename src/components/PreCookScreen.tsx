@@ -86,13 +86,6 @@ export function PreCookScreen({
         {/* Phase progress */}
         <div className="mt-6">
           <ProgressBar phases={plan.phases} currentPhaseIndex={0} stepsInPhase={0} />
-          <div className="mt-1.5 flex justify-between">
-            {plan.phases.map((p) => (
-              <span key={p.phase_number} className="text-[10px] text-[#887B6C]">
-                {p.phase_name}
-              </span>
-            ))}
-          </div>
         </div>
 
         {/* Recipe steps overview */}

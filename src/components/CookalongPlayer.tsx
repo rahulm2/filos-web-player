@@ -158,9 +158,14 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   }, [engine, cascade, pacing]);
 
   const handleRepeat = useCallback(() => {
-    engine.pause();
+    // Seek to start of current step's first chunk and play
+    const step = plan.phases[pacing.phaseIndex]?.steps[pacing.stepIndex];
+    const firstChunk = step?.core_chunks[0];
+    if (firstChunk) {
+      engine.playFrom(firstChunk.start_time, firstChunk.end_time);
+    }
     pacing.dispatch({ type: "REPEAT" });
-  }, [engine, pacing]);
+  }, [engine, pacing, plan]);
 
   const handleNavigate = useCallback(async (phaseIndex: number, stepIndex: number) => {
     engine.pause();
