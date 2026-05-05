@@ -72,11 +72,11 @@ export function TransportControls({
           <button
             onClick={() => setShowSpeed(!showSpeed)}
             onDoubleClick={cycleSpeed}
-            className="flex h-9 cursor-pointer items-center justify-center rounded-full border border-[#5C5347] px-2.5 transition-all hover:border-[#F5F0EB] hover:bg-[#443B31] active:scale-95"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[#5C5347] transition-all hover:border-[#F5F0EB] hover:bg-[#443B31] active:scale-95"
             aria-label="Playback speed"
           >
-            <span className="text-[11px] font-medium text-[#F5F0EB]">
-              {currentSpeed}x
+            <span className="text-[10px] font-semibold text-[#F5F0EB]">
+              {currentSpeed === 1 ? "1x" : currentSpeed < 1 ? ".75" : currentSpeed % 1 === 0 ? `${currentSpeed}x` : `${currentSpeed}`}
             </span>
           </button>
         )}
