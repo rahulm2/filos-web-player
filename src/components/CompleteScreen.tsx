@@ -69,7 +69,7 @@ export function CompleteScreen({ plan, onRestart }: { plan: PlaybackPlan; onRest
 
   return (
     <div className="min-h-[100dvh] bg-[#F5F0EB]">
-      <div className="mx-auto max-w-[480px] px-5 py-8">
+      <div className="mx-auto max-w-[640px] px-5 py-8">
         {/* Progress bar — all filled */}
         <ProgressBar phases={plan.phases} currentPhaseIndex={plan.phases.length} />
 
