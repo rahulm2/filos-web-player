@@ -173,8 +173,8 @@ export function PreCookScreen({
           >
             Start cooking with {plan.recipe.creator.split(" ")[0]}
           </button>
-          <p className="mt-2 text-center text-[11px] text-[#887B6C]">
-            Headphones recommended. Tap Next when you&apos;re ready to move on.
+          <p className="mt-2 text-center text-[11px] leading-tight text-[#887B6C]">
+            Headphones recommended. Tap Next to advance.
           </p>
         </div>
       </div>
