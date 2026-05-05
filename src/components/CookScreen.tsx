@@ -37,18 +37,17 @@ export function CookScreen({
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#2A231D] px-5 py-6">
       {/* Top bar */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <ProgressBar
-            phases={plan.phases}
-            currentPhaseIndex={phaseIndex}
-            stepsInPhase={currentPhase.steps.indexOf(currentStep)}
-          />
-        </div>
+      <div>
+        <ProgressBar
+          phases={plan.phases}
+          currentPhaseIndex={phaseIndex}
+          stepsInPhase={currentPhase.steps.indexOf(currentStep)}
+          onNavigate={onNavigate}
+        />
       </div>
 
       {/* Phase label */}
-      <p className="mt-4 text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
+      <p className="mt-3 text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
         {currentPhase.phase_name}
       </p>
 

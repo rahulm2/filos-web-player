@@ -9,7 +9,7 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-export function CompleteScreen({ plan }: { plan: PlaybackPlan }) {
+export function CompleteScreen({ plan, onRestart }: { plan: PlaybackPlan; onRestart: () => void }) {
   const { track } = useAnalytics();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [email, setEmail] = useState("");
@@ -197,6 +197,18 @@ export function CompleteScreen({ plan }: { plan: PlaybackPlan }) {
               )}
             </>
           )}
+        </div>
+
+        <div className="mt-8 h-[0.5px] bg-[#DDD5CB]" />
+
+        {/* Start again */}
+        <div className="mt-6 text-center">
+          <button
+            onClick={onRestart}
+            className="cursor-pointer rounded-[10px] border border-[#DDD5CB] px-6 py-3 text-[14px] font-medium text-[#2A231D] transition-all hover:border-[#C9944A] hover:text-[#C9944A] active:scale-[0.97]"
+          >
+            Cook this again
+          </button>
         </div>
       </div>
     </div>

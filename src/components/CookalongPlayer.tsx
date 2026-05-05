@@ -152,6 +152,11 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     pacing.dispatch({ type: "NAVIGATE", phaseIndex, stepIndex });
   }, [engine, cascade, pacing]);
 
+  const handleRestart = useCallback(() => {
+    engine.pause();
+    pacing.dispatch({ type: "RESTART" });
+  }, [engine, pacing]);
+
   // Render based on state
   switch (pacing.state) {
     case "LOADING":
@@ -201,7 +206,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
       );
 
     case "COMPLETE":
-      return <CompleteScreen plan={plan} />;
+      return <CompleteScreen plan={plan} onRestart={handleRestart} />;
 
     default:
       return null;

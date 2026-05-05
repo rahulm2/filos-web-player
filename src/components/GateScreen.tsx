@@ -42,11 +42,12 @@ export function GateScreen({
           phases={plan.phases}
           currentPhaseIndex={phaseIndex}
           stepsInPhase={currentPhase.steps.indexOf(currentStep) + 1}
+          onNavigate={onNavigate}
         />
       </div>
 
       {/* Phase label */}
-      <p className="mt-4 text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
+      <p className="mt-3 text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
         {currentPhase.phase_name}
       </p>
 

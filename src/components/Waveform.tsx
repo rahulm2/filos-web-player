@@ -23,7 +23,6 @@ export function Waveform({
 
   useEffect(() => {
     if (!analyser || !active) {
-      // Show idle state — gentle center-biased shape
       setBars(
         Array.from({ length: barCount }, (_, i) => {
           const center = 1 - Math.abs(i - barCount / 2) / (barCount / 2);
@@ -33,7 +32,13 @@ export function Waveform({
       return;
     }
 
-    if (!dataRef.current) {
+    // More sensitive settings
+    analyser.fftSize = 32;
+    analyser.smoothingTimeConstant = 0.4; // less smoothing = more reactive
+    analyser.minDecibels = -80;
+    analyser.maxDecibels = -10;
+
+    if (!dataRef.current || dataRef.current.length !== analyser.frequencyBinCount) {
       dataRef.current = new Uint8Array(analyser.frequencyBinCount);
     }
 
@@ -42,18 +47,24 @@ export function Waveform({
       analyser.getByteFrequencyData(dataRef.current);
 
       const binCount = dataRef.current.length;
-      const binsPerBar = Math.floor(binCount / barCount);
+      const binsPerBar = Math.max(1, Math.floor(binCount / barCount));
       const newBars: number[] = [];
 
       for (let i = 0; i < barCount; i++) {
-        let sum = 0;
+        let max = 0;
         for (let j = 0; j < binsPerBar; j++) {
-          sum += dataRef.current[i * binsPerBar + j];
+          const idx = i * binsPerBar + j;
+          if (idx < binCount && dataRef.current[idx] > max) {
+            max = dataRef.current[idx];
+          }
         }
-        const avg = sum / binsPerBar / 255;
-        // Apply center bias — center bars are naturally taller
+        // Use max instead of avg for more sensitivity
+        const normalized = max / 255;
+        // Amplify low values to make speech more visible
+        const amplified = Math.pow(normalized, 0.6);
+        // Center bias for visual shape
         const centerBias = 1 - Math.abs(i - barCount / 2) / (barCount / 2);
-        const value = Math.max(0.08, avg * (0.6 + centerBias * 0.4));
+        const value = Math.max(0.08, amplified * (0.5 + centerBias * 0.5));
         newBars.push(value);
       }
 
@@ -70,11 +81,12 @@ export function Waveform({
       {bars.map((val, i) => (
         <div
           key={i}
-          className="rounded-full transition-all duration-100"
+          className="rounded-full"
           style={{
             width: 3,
             height: `${Math.max(3, val * 44)}px`,
             backgroundColor: active ? color : inactiveColor,
+            transition: "height 80ms ease-out",
           }}
         />
       ))}

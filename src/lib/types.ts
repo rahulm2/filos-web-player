@@ -75,4 +75,5 @@ export type PacingAction =
   | { type: "RESUME" }
   | { type: "GO_BACK" }
   | { type: "REPEAT" }
-  | { type: "NAVIGATE"; phaseIndex: number; stepIndex: number };
+  | { type: "NAVIGATE"; phaseIndex: number; stepIndex: number }
+  | { type: "RESTART" };
