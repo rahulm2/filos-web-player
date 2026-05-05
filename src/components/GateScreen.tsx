@@ -36,7 +36,7 @@ export function GateScreen({
   onNext: () => void;
   onPause: () => void;
   onNavigate: (phaseIndex: number, stepIndex: number) => void;
-  onSpeedChange: (speed: number) => void;
+  onSpeedChange?: (speed: number) => void;
   currentSpeed: number;
 }) {
   return (

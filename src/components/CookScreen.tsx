@@ -47,7 +47,7 @@ export function CookScreen({
   onRepeat: () => void;
   onNavigate: (phaseIndex: number, stepIndex: number) => void;
   onSeek: (progress: number) => void;
-  onSpeedChange: (speed: number) => void;
+  onSpeedChange?: (speed: number) => void;
   currentSpeed: number;
 }) {
   return (

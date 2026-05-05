@@ -25,6 +25,12 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const isResuming = useRef(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isInitializing, setIsInitializing] = useState(false);
+  // iOS uses WebKit for all browsers — playbackRate glitches through MediaElementSourceNode
+  const isIOSRef = useRef(false);
+  if (typeof navigator !== "undefined" && !isIOSRef.current) {
+    isIOSRef.current = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
 
   const handleSpeedChange = useCallback((speed: number) => {
     setPlaybackSpeed(speed);
@@ -248,7 +254,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onRepeat={handleRepeat}
           onNavigate={handleNavigate}
           onSeek={handleSeek}
-          onSpeedChange={handleSpeedChange}
+          onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
         />
       );
@@ -273,7 +279,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onNext={handleNext}
           onPause={handlePause}
           onNavigate={handleNavigate}
-          onSpeedChange={handleSpeedChange}
+          onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
         />
       );
