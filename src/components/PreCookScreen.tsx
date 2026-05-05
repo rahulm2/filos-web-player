@@ -165,15 +165,15 @@ export function PreCookScreen({
       </div>
 
       {/* Fixed CTA at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#EDE6DD] bg-[#F5F0EB] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
-        <div className="mx-auto max-w-[480px]">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#EDE6DD] bg-[#F5F0EB] px-5 pt-3">
+        <div className="mx-auto max-w-[480px] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             onClick={() => { track("cta_tapped", { recipe_title: plan.recipe.title, creator: plan.recipe.creator }); setShowConfirm(true); }}
             className="w-full cursor-pointer rounded-[10px] bg-[#2A231D] px-6 py-[14px] text-[15px] font-medium text-[#F5F0EB] transition-all hover:bg-[#3D342C] active:scale-[0.98]"
           >
             Start cooking with {plan.recipe.creator.split(" ")[0]}
           </button>
-          <p className="mt-2 text-center text-[11px] leading-tight text-[#887B6C]">
+          <p className="mt-1.5 mb-1 text-center text-[11px] leading-tight text-[#887B6C]">
             Headphones recommended. Tap Next to advance.
           </p>
         </div>
