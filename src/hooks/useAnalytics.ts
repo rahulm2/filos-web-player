@@ -10,11 +10,15 @@ function ensurePostHogInit() {
   const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   if (!token) return;
   posthog.init(token, {
-    api_host: "/ingest",
-    ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
-    capture_pageview: false, // we fire page_view manually
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
+    capture_pageview: false,
     capture_pageleave: true,
     persistence: "localStorage",
+    loaded: (ph) => {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[PostHog] initialized, distinct_id:", ph.get_distinct_id());
+      }
+    },
   });
   initialized = true;
 }
