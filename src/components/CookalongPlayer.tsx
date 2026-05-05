@@ -78,6 +78,12 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
       } else {
         engine.playFrom(pacing.currentChunk.start_time, pacing.currentChunk.end_time);
       }
+      if (pacing.stepIndex === 0 && pacing.chunkIndex === 0) {
+        track("phase_start", {
+          phase_index: pacing.phaseIndex,
+          phase_name: currentPhase?.phase_name,
+        });
+      }
     }
 
     if (pacing.state === "SEAM") {
@@ -98,6 +104,10 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           () => engine.getCurrentTime()
         );
       }
+    }
+
+    if (pacing.state === "COMPLETE") {
+      track("session_complete", { recipe_title: plan.recipe.title, creator: plan.recipe.creator });
     }
 
     return () => {

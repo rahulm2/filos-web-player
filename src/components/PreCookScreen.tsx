@@ -6,6 +6,7 @@ import type { PlaybackPlan } from "@/lib/types";
 import { ConfirmationAlert } from "./ConfirmationAlert";
 import { ProgressBar } from "./ProgressBar";
 import { InstagramPrompt } from "./InstagramPrompt";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 export function PreCookScreen({
   plan,
@@ -15,6 +16,7 @@ export function PreCookScreen({
   onStart: () => void;
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const { track } = useAnalytics();
 
   return (
     <div className="min-h-screen bg-[#F5F0EB] pb-28">
@@ -160,7 +162,7 @@ export function PreCookScreen({
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#EDE6DD] bg-[#F5F0EB] px-5 py-4">
         <div className="mx-auto max-w-[480px]">
           <button
-            onClick={() => setShowConfirm(true)}
+            onClick={() => { track("cta_tapped", { recipe_title: plan.recipe.title, creator: plan.recipe.creator }); setShowConfirm(true); }}
             className="w-full cursor-pointer rounded-[10px] bg-[#2A231D] px-6 py-[14px] text-[15px] font-medium text-[#F5F0EB] transition-all hover:bg-[#3D342C] active:scale-[0.98]"
           >
             Start cooking with {plan.recipe.creator.split(" ")[0]}

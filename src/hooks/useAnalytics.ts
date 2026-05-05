@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import posthog from "posthog-js";
 
 type EventName =
   | "page_view"
-  | "cta_tap"
+  | "cta_tapped"
   | "session_start"
   | "phase_start"
   | "gate_enter"
@@ -17,23 +18,8 @@ type EventName =
 
 export function useAnalytics() {
   const track = useCallback((event: EventName, properties?: Record<string, unknown>) => {
-    // PostHog integration — for now just log in dev
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[analytics] ${event}`, properties);
-    }
-
-    // Send to our API route for server-side forwarding
     try {
-      const payload = JSON.stringify({ event, properties, timestamp: Date.now() });
-      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-        navigator.sendBeacon("/api/track", payload);
-      } else {
-        fetch("/api/track", {
-          method: "POST",
-          body: payload,
-          keepalive: true,
-        });
-      }
+      posthog.capture(event, properties);
     } catch {
       // Analytics should never break the app
     }
@@ -57,15 +43,12 @@ export function useAbandonTracking(
       if (state === "COMPLETE" || state === "LOADING") return;
       sent = true;
 
-      const blob = new Blob(
-        [JSON.stringify({
-          event: "session_abandon",
-          properties: { last_state: state, last_step_id: stepId, audio_position: audioPosition },
-          timestamp: Date.now(),
-        })],
-        { type: "application/json" }
-      );
-      navigator.sendBeacon("/api/track", blob);
+      const properties = { last_state: state, last_step_id: stepId, audio_position: audioPosition };
+      try {
+        posthog.capture("session_abandon", properties);
+      } catch {
+        // fall through to beacon
+      }
     };
 
     const onVisibility = () => {

@@ -6,26 +6,22 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // In production, forward to PostHog server-side API
-    // For now, just acknowledge receipt
-    if (process.env.NODE_ENV === "development") {
-      console.log("[track]", body);
-    }
+    const posthogToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+    const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
 
-    // TODO: Forward to PostHog when POSTHOG_API_KEY is set
-    // const posthogKey = process.env.POSTHOG_API_KEY;
-    // if (posthogKey) {
-    //   await fetch("https://app.posthog.com/capture/", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       api_key: posthogKey,
-    //       event: body.event,
-    //       properties: { ...body.properties, timestamp: body.timestamp },
-    //       distinct_id: "anonymous",
-    //     }),
-    //   });
-    // }
+    if (posthogToken && body.event) {
+      await fetch(`${posthogHost}/capture/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          api_key: posthogToken,
+          event: body.event,
+          properties: { ...(body.properties ?? {}), $lib: "posthog-edge" },
+          distinct_id: body.distinct_id ?? "anonymous",
+          timestamp: body.timestamp ? new Date(body.timestamp).toISOString() : undefined,
+        }),
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch {
