@@ -23,6 +23,8 @@ export function GateScreen({
   onNavigate,
   onSpeedChange,
   currentSpeed,
+  isPaused = false,
+  onResume,
 }: {
   plan: PlaybackPlan;
   currentPhase: Phase;
@@ -38,6 +40,8 @@ export function GateScreen({
   onNavigate: (phaseIndex: number, stepIndex: number) => void;
   onSpeedChange?: (speed: number) => void;
   currentSpeed: number;
+  isPaused?: boolean;
+  onResume?: () => void;
 }) {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#2A231D] px-5 py-6">
@@ -130,11 +134,11 @@ export function GateScreen({
       {/* Transport */}
       <div className="pb-4 pt-4">
         <TransportControls
-          isPaused={false}
+          isPaused={isPaused}
           onBack={() => {}}
           onRepeat={() => {}}
           onPause={onPause}
-          onResume={() => {}}
+          onResume={onResume ?? (() => {})}
           onNext={onNext}
           onSpeedChange={onSpeedChange}
           currentSpeed={currentSpeed}

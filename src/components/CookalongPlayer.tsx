@@ -130,17 +130,20 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     }
 
     if (pacing.state === "WAITING" || pacing.state === "PHASE_GATE") {
-      engine.pause();
-      const gate = currentStep?.gate;
-      if (gate) {
-        track("gate_enter", { step_id: currentStep.step_id });
-        cascade.start(
-          gate.cascade,
-          (start, end) => engine.playFrom(start, end),
-          () => engine.fadeOut(),
-          () => engine.pause(),
-          () => engine.getCurrentTime()
-        );
+      // Only start cascade if not already running (e.g., resuming from pause)
+      if (!cascade.isRunning()) {
+        engine.pause();
+        const gate = currentStep?.gate;
+        if (gate) {
+          track("gate_enter", { step_id: currentStep.step_id });
+          cascade.start(
+            gate.cascade,
+            (start, end) => engine.playFrom(start, end),
+            () => engine.fadeOut(),
+            () => engine.pause(),
+            () => engine.getCurrentTime()
+          );
+        }
       }
     }
 
@@ -242,13 +245,12 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
     case "PLAYING":
     case "SEAM":
-    case "PAUSED":
       return (
         <CookScreen
           plan={plan}
           currentPhase={currentPhase}
           currentStep={currentStep}
-          isPaused={pacing.state === "PAUSED"}
+          isPaused={false}
           phaseIndex={pacing.phaseIndex}
           analyser={engine.analyserRef.current}
           coreProgress={coreProgress}
@@ -263,6 +265,57 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           currentSpeed={playbackSpeed}
         />
       );
+
+    case "PAUSED": {
+      // Show the correct screen based on what was playing before pause
+      const prev = pacing.previousState;
+      if (prev === "WAITING" || prev === "PHASE_GATE") {
+        return (
+          <GateScreen
+            plan={plan}
+            currentPhase={currentPhase}
+            currentStep={currentStep}
+            isPhaseGate={prev === "PHASE_GATE"}
+            nextPhaseName={
+              prev === "PHASE_GATE"
+                ? plan.phases[pacing.phaseIndex + 1]?.phase_name
+                : undefined
+            }
+            phaseIndex={pacing.phaseIndex}
+            cascadeStatus={cascade.state.statusText}
+            cascadeIsPlayingAudio={false}
+            analyser={engine.analyserRef.current}
+            onNext={handleNext}
+            onPause={handlePause}
+            onNavigate={handleNavigate}
+            onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
+            currentSpeed={playbackSpeed}
+            isPaused={true}
+            onResume={handleResume}
+          />
+        );
+      }
+      return (
+        <CookScreen
+          plan={plan}
+          currentPhase={currentPhase}
+          currentStep={currentStep}
+          isPaused={true}
+          phaseIndex={pacing.phaseIndex}
+          analyser={engine.analyserRef.current}
+          coreProgress={coreProgress}
+          onNext={handleNext}
+          onPause={handlePause}
+          onResume={handleResume}
+          onBack={handleBack}
+          onRepeat={handleRepeat}
+          onNavigate={handleNavigate}
+          onSeek={handleSeek}
+          onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
+          currentSpeed={playbackSpeed}
+        />
+      );
+    }
 
     case "WAITING":
     case "PHASE_GATE":
