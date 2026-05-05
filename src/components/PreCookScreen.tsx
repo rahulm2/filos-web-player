@@ -24,7 +24,7 @@ export function PreCookScreen({
   const { track } = useAnalytics();
 
   return (
-    <div className="min-h-screen bg-[#F5F0EB] pb-28">
+    <div className="min-h-screen bg-[#F5F0EB] pb-40">
       <div className="mx-auto max-w-[480px] px-5">
         <InstagramPrompt />
 
