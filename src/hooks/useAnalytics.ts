@@ -18,7 +18,7 @@ function ensurePostHogInit() {
     capture_pageview: false,
     capture_pageleave: true,
     persistence: "localStorage",
-    disable_session_recording: true,
+    disable_session_recording: false,
     autocapture: false,
     enable_heatmaps: false,
     loaded: (ph) => {
