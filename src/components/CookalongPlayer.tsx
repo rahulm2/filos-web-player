@@ -172,7 +172,10 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           currentStep={currentStep}
           isPaused={pacing.state === "PAUSED"}
           phaseIndex={pacing.phaseIndex}
+          stepIndex={pacing.stepIndex}
+          chunkIndex={pacing.chunkIndex}
           analyser={engine.analyserRef.current}
+          audioRef={engine.audioRef}
           onNext={handleNext}
           onPause={handlePause}
           onResume={handleResume}
