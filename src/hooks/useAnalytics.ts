@@ -47,7 +47,7 @@ type EventName =
   | "session_complete"
   | "session_abandon"
   | "survey_response"
-  | "email_submit";
+  | "form_submit";
 
 export function useAnalytics() {
   useEffect(() => {

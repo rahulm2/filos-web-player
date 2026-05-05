@@ -39,14 +39,21 @@ export function CompleteScreen({ plan, onRestart }: { plan: PlaybackPlan; onRest
     setSubmitting(true);
 
     try {
-      // Send to analytics + API
-      track("email_submit", { has_email: true });
+      const formData = {
+        email: trimmed,
+        cook_again: answers.cook_again || null,
+        finished: answers.finished || null,
+        feedback: (document.querySelector("textarea") as HTMLTextAreaElement)?.value?.trim() || null,
+        recipe: plan.recipe.title,
+        creator: plan.recipe.creator,
+      };
+      track("form_submit", formData);
       await fetch("/api/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          event: "email_submit",
-          properties: { email: trimmed, recipe: plan.recipe.title },
+          event: "form_submit",
+          properties: formData,
           timestamp: Date.now(),
         }),
       });
