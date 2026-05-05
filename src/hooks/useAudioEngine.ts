@@ -8,6 +8,7 @@ interface AudioEngine {
   analyserRef: React.RefObject<AnalyserNode | null>;
   isReady: boolean;
   isBuffering: boolean;
+  preloadProgress: number;
   init: () => Promise<void>;
   playFrom: (startTime: number, endTime: number) => void;
   pause: () => void;
@@ -22,31 +23,83 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
   const ctxRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [preloadProgress, setPreloadProgress] = useState(0);
 
-  // Prefetch: create audio element immediately and start loading
+  // Prefetch entire file as blob on mount — all seeks from memory after this
   useEffect(() => {
-    if (audioRef.current) return;
-    const audio = new Audio();
-    audio.src = audioUrl;
-    audio.preload = "auto";
-    audio.crossOrigin = "anonymous";
-    audio.setAttribute("playsinline", "");
-    audioRef.current = audio;
+    let cancelled = false;
 
-    // Track buffering state
-    const onWaiting = () => setIsBuffering(true);
-    const onCanPlay = () => setIsBuffering(false);
-    const onPlaying = () => setIsBuffering(false);
-    audio.addEventListener("waiting", onWaiting);
-    audio.addEventListener("canplay", onCanPlay);
-    audio.addEventListener("playing", onPlaying);
+    const prefetch = async () => {
+      try {
+        const response = await fetch(audioUrl);
+        if (cancelled) return;
+
+        const reader = response.body?.getReader();
+        const contentLength = Number(response.headers.get("content-length")) || 0;
+
+        if (!reader) {
+          // Fallback: no streaming reader, just get the blob directly
+          const blob = await (await fetch(audioUrl)).blob();
+          if (cancelled) return;
+          blobUrlRef.current = URL.createObjectURL(blob);
+          setPreloadProgress(1);
+          createAudioElement(blobUrlRef.current);
+          return;
+        }
+
+        // Stream download with progress
+        const chunks: BlobPart[] = [];
+        let received = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (cancelled) return;
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          if (contentLength > 0) {
+            setPreloadProgress(received / contentLength);
+          }
+        }
+
+        const blob = new Blob(chunks, { type: "audio/mpeg" });
+        blobUrlRef.current = URL.createObjectURL(blob);
+        setPreloadProgress(1);
+        createAudioElement(blobUrlRef.current);
+      } catch {
+        // Fallback: use original URL (will make range requests on seek)
+        createAudioElement(audioUrl);
+        setPreloadProgress(1);
+      }
+    };
+
+    const createAudioElement = (src: string) => {
+      if (audioRef.current) return;
+      const audio = new Audio();
+      audio.src = src;
+      audio.preload = "auto";
+      audio.crossOrigin = "anonymous";
+      audio.setAttribute("playsinline", "");
+      audioRef.current = audio;
+
+      const onWaiting = () => setIsBuffering(true);
+      const onCanPlay = () => setIsBuffering(false);
+      const onPlaying = () => setIsBuffering(false);
+      audio.addEventListener("waiting", onWaiting);
+      audio.addEventListener("canplay", onCanPlay);
+      audio.addEventListener("playing", onPlaying);
+    };
+
+    prefetch();
 
     return () => {
-      audio.removeEventListener("waiting", onWaiting);
-      audio.removeEventListener("canplay", onCanPlay);
-      audio.removeEventListener("playing", onPlaying);
+      cancelled = true;
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
     };
   }, [audioUrl]);
 
@@ -60,7 +113,7 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     const ctx = new Ctx();
     await ctx.resume();
 
-    // Prime audio element — play+pause unlocks iOS audio
+    // Prime audio element
     audio.load();
     try {
       const playPromise = audio.play();
@@ -154,5 +207,5 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     audio.preservesPitch = true;
   }, []);
 
-  return { audioRef, analyserRef, isReady, isBuffering, init, playFrom, pause, resume, fadeOut, getCurrentTime, setSpeed };
+  return { audioRef, analyserRef, isReady, isBuffering, preloadProgress, init, playFrom, pause, resume, fadeOut, getCurrentTime, setSpeed };
 }

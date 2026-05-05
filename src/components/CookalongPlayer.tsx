@@ -198,7 +198,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   // Render based on state
   switch (pacing.state) {
     case "LOADING":
-      return <PreCookScreen plan={plan} onStart={handleStart} isInitializing={isInitializing} />;
+      return <PreCookScreen plan={plan} onStart={handleStart} isInitializing={isInitializing} preloadProgress={engine.preloadProgress} />;
 
     case "PLAYING":
     case "SEAM":
