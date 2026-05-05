@@ -24,8 +24,7 @@ export function useBoundaryDetector(
     const fire = () => {
       if (firedRef.current || gen !== generationRef.current) return;
       firedRef.current = true;
-      // Don't pause here — the next state (SEAM/WAITING/PHASE_GATE) handles audio.
-      // Pausing here on iOS causes an audible cut because the audio buffer doesn't flush.
+      audio.pause();
       onBoundary();
     };
 
