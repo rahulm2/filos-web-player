@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import type { PlaybackPlan } from "@/lib/types";
 
 export function useMediaSession(
@@ -17,22 +17,33 @@ export function useMediaSession(
 ) {
   const coreDurationRef = useRef(coreDuration ?? 0);
   const coreElapsedRef = useRef(coreElapsed ?? 0);
+  const lastReportedRef = useRef(0);
+  const throttleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   coreDurationRef.current = coreDuration ?? 0;
   coreElapsedRef.current = coreElapsed ?? 0;
 
-  // Update position state so the tray scrubber stays in sync
-  useEffect(() => {
-    if (!("mediaSession" in navigator) || !coreDuration) return;
+  // Throttled position update — max once per second, never goes backwards
+  const updatePosition = useCallback(() => {
+    if (!("mediaSession" in navigator) || !coreDurationRef.current) return;
+    const pos = Math.min(coreElapsedRef.current, coreDurationRef.current);
+    // Don't report backwards jumps (step transitions cause momentary dip)
+    if (pos < lastReportedRef.current - 1) return;
+    lastReportedRef.current = pos;
     try {
       navigator.mediaSession.setPositionState({
-        duration: coreDuration,
-        position: Math.min(coreElapsed ?? 0, coreDuration),
+        duration: coreDurationRef.current,
+        position: Math.max(0, pos),
         playbackRate: 1,
       });
-    } catch {
-      // Some browsers reject invalid values
-    }
-  }, [coreDuration, coreElapsed]);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!coreDuration) return;
+    if (throttleRef.current) clearTimeout(throttleRef.current);
+    throttleRef.current = setTimeout(updatePosition, 1000);
+    return () => { if (throttleRef.current) clearTimeout(throttleRef.current); };
+  }, [coreDuration, coreElapsed, updatePosition]);
 
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
@@ -65,6 +76,7 @@ export function useMediaSession(
       navigator.mediaSession.setActionHandler("seekto", (details) => {
         if (details.seekTime != null && handlers.onSeek && coreDurationRef.current > 0) {
           const progress = details.seekTime / coreDurationRef.current;
+          lastReportedRef.current = details.seekTime;
           handlers.onSeek(Math.max(0, Math.min(1, progress)));
         }
       });
@@ -72,6 +84,7 @@ export function useMediaSession(
         const offset = details.seekOffset ?? 10;
         if (handlers.onSeek && coreDurationRef.current > 0) {
           const newTime = Math.max(0, coreElapsedRef.current - offset);
+          lastReportedRef.current = newTime;
           handlers.onSeek(newTime / coreDurationRef.current);
         }
       });
