@@ -6,6 +6,7 @@ describe("useBoundaryDetector", () => {
   let mockAudio: {
     currentTime: number;
     paused: boolean;
+    playbackRate: number;
     pause: ReturnType<typeof vi.fn>;
   };
 
@@ -13,6 +14,7 @@ describe("useBoundaryDetector", () => {
     mockAudio = {
       currentTime: 0,
       paused: false,
+      playbackRate: 1,
       pause: vi.fn(),
     };
     vi.useFakeTimers();
@@ -24,7 +26,7 @@ describe("useBoundaryDetector", () => {
 
   it("does nothing when audio is null", () => {
     const onBoundary = vi.fn();
-    renderHook(() => useBoundaryDetector(null, 10, onBoundary));
+    renderHook(() => useBoundaryDetector(null, 10, 0, onBoundary));
     vi.advanceTimersByTime(5000);
     expect(onBoundary).not.toHaveBeenCalled();
   });
@@ -32,7 +34,7 @@ describe("useBoundaryDetector", () => {
   it("does nothing when endTime is null", () => {
     const onBoundary = vi.fn();
     renderHook(() =>
-      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, null, onBoundary)
+      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, null, null, onBoundary)
     );
     vi.advanceTimersByTime(5000);
     expect(onBoundary).not.toHaveBeenCalled();
@@ -43,34 +45,36 @@ describe("useBoundaryDetector", () => {
     mockAudio.currentTime = 8;
 
     renderHook(() =>
-      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, 10, onBoundary)
+      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, 10, 5, onBoundary)
     );
 
-    // Simulate time passing — setTimeout fires after (endTime - currentTime)*1000 + 100ms
     mockAudio.currentTime = 10.1;
-    vi.advanceTimersByTime(2200);
+    vi.advanceTimersByTime(3000);
 
     expect(onBoundary).toHaveBeenCalledTimes(1);
     expect(mockAudio.pause).toHaveBeenCalled();
   });
 
-  it("does not fire onBoundary if audio is paused", () => {
+  it("waits until audio is in chunk range before detecting", () => {
     const onBoundary = vi.fn();
-    mockAudio.currentTime = 9.5;
-    mockAudio.paused = true;
+    // Audio is at 300 (from cascade) but chunk is 20-30
+    mockAudio.currentTime = 300;
 
     renderHook(() =>
-      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, 10, onBoundary)
+      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, 30, 20, onBoundary)
     );
 
-    mockAudio.currentTime = 11;
+    // Should not fire — currentTime is way outside chunk range
     vi.advanceTimersByTime(2000);
+    expect(onBoundary).not.toHaveBeenCalled();
 
-    // rAF won't fire in jsdom, but setTimeout will — however audio is paused
-    // The setTimeout fallback checks currentTime >= endTime - 0.05
-    // It should still fire since it only checks time, not paused state in the timeout
-    // Actually looking at the code: the rAF check includes !audio.paused
-    // but the setTimeout only checks time. Let's verify behavior.
+    // Now simulate seek completing
+    mockAudio.currentTime = 25;
+    vi.advanceTimersByTime(500);
+    expect(onBoundary).not.toHaveBeenCalled(); // not at end yet
+
+    mockAudio.currentTime = 30;
+    vi.advanceTimersByTime(500);
     expect(onBoundary).toHaveBeenCalledTimes(1);
   });
 
@@ -79,7 +83,7 @@ describe("useBoundaryDetector", () => {
     mockAudio.currentTime = 9.9;
 
     renderHook(() =>
-      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, 10, onBoundary)
+      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, 10, 5, onBoundary)
     );
 
     mockAudio.currentTime = 10.5;
@@ -95,7 +99,7 @@ describe("useBoundaryDetector", () => {
     mockAudio.currentTime = 5;
 
     const { unmount } = renderHook(() =>
-      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, 10, onBoundary)
+      useBoundaryDetector(mockAudio as unknown as HTMLAudioElement, 10, 5, onBoundary)
     );
 
     unmount();

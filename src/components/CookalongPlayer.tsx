@@ -95,6 +95,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   useBoundaryDetector(
     engine.audioRef.current,
     pacing.state === "PLAYING" ? pacing.currentEndTime : null,
+    pacing.state === "PLAYING" && pacing.currentChunk ? pacing.currentChunk.start_time : null,
     onBoundary
   );
 
