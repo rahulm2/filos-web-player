@@ -35,8 +35,11 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: false, // intentionally false — PWA standalone breaks iOS background audio
-    title: "Cook with Clare",
+    title: "filos",
     statusBarStyle: "black-translucent",
+  },
+  icons: {
+    apple: "/icons/icon-192.png",
   },
 };
 
