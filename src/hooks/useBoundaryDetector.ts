@@ -39,7 +39,8 @@ export function useBoundaryDetector(
           return;
         }
         const ct = audio.currentTime;
-        if (ct >= startTime && ct >= endTime) {
+        // +0.15s buffer — let the last word finish before cutting
+        if (ct >= startTime && ct >= endTime + 0.15) {
           clearInterval(interval);
           fire();
         }

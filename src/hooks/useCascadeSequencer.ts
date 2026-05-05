@@ -22,7 +22,7 @@ interface CascadeControls {
   ) => void;
   interrupt: () => Promise<void>;
   pauseCascade: () => void;
-  resumeCascade: () => void;
+  resumeCascade: () => boolean;
 }
 
 export function useCascadeSequencer(): CascadeControls {
@@ -190,8 +190,10 @@ export function useCascadeSequencer(): CascadeControls {
     }
   }, []);
 
-  const resumeCascade = useCallback(() => {
+  const resumeCascade = useCallback((): boolean => {
     pausedRef.current = false;
+    // Return whether audio was playing when paused (caller should resume it)
+    return isPlayingAudioRef.current;
   }, []);
 
   return { state, start, interrupt, pauseCascade, resumeCascade };
