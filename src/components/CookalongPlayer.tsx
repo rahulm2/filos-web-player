@@ -10,6 +10,7 @@ import { useMediaSession } from "@/hooks/useMediaSession";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useAnalytics, useAbandonTracking } from "@/hooks/useAnalytics";
 import { timing } from "@/lib/constants";
+import { useCoreProgress } from "@/hooks/useCoreProgress";
 import { PreCookScreen } from "./PreCookScreen";
 import { CookScreen } from "./CookScreen";
 import { GateScreen } from "./GateScreen";
@@ -32,6 +33,11 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
   const currentPhase = plan.phases[pacing.phaseIndex];
   const currentStep = currentPhase?.steps[pacing.stepIndex];
+
+  const coreProgress = useCoreProgress(
+    plan, pacing.phaseIndex, pacing.stepIndex, pacing.chunkIndex,
+    engine.audioRef, pacing.state === "PLAYING"
+  );
 
   // Wake lock while cooking
   useWakeLock(pacing.state !== "LOADING" && pacing.state !== "COMPLETE");
@@ -161,6 +167,29 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     pacing.dispatch({ type: "NAVIGATE", phaseIndex, stepIndex });
   }, [engine, cascade, pacing]);
 
+  const handleSeek = useCallback((progress: number) => {
+    const target = coreProgress.resolveSeek(progress);
+    if (!target) return;
+    engine.pause();
+    if (cascade.state.isRunning) cascade.interrupt();
+    // Navigate to the chunk and seek within it
+    pacing.dispatch({
+      type: "NAVIGATE_CHUNK",
+      phaseIndex: target.phaseIndex,
+      stepIndex: target.stepIndex,
+      chunkIndex: target.chunkIndex,
+    });
+    // After state update, playFrom will be called by the effect — but we need
+    // to seek to the exact audioTime, not chunk start. Use a microtask to override.
+    setTimeout(() => {
+      const audio = engine.audioRef.current;
+      if (audio) {
+        audio.currentTime = target.audioTime;
+        audio.play();
+      }
+    }, 50);
+  }, [coreProgress, engine, cascade, pacing]);
+
   const handleRestart = useCallback(() => {
     engine.pause();
     pacing.dispatch({ type: "RESTART" });
@@ -181,16 +210,15 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           currentStep={currentStep}
           isPaused={pacing.state === "PAUSED"}
           phaseIndex={pacing.phaseIndex}
-          stepIndex={pacing.stepIndex}
-          chunkIndex={pacing.chunkIndex}
           analyser={engine.analyserRef.current}
-          audioRef={engine.audioRef}
+          coreProgress={coreProgress}
           onNext={handleNext}
           onPause={handlePause}
           onResume={handleResume}
           onBack={handleBack}
           onRepeat={handleRepeat}
           onNavigate={handleNavigate}
+          onSeek={handleSeek}
           onSpeedChange={handleSpeedChange}
           currentSpeed={playbackSpeed}
         />

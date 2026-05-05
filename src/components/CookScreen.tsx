@@ -7,7 +7,13 @@ import { TransportControls } from "./TransportControls";
 import { Waveform } from "./Waveform";
 import { StepNavigator } from "./StepNavigator";
 import { ShareButton } from "./ShareButton";
-import { useCoreProgress } from "@/hooks/useCoreProgress";
+import { Scrubber } from "./Scrubber";
+
+interface CoreProgressData {
+  progress: number;
+  elapsedFormatted: string;
+  remainingFormatted: string;
+}
 
 export function CookScreen({
   plan,
@@ -15,16 +21,15 @@ export function CookScreen({
   currentStep,
   isPaused,
   phaseIndex,
-  stepIndex,
-  chunkIndex,
   analyser,
-  audioRef,
+  coreProgress,
   onNext,
   onPause,
   onResume,
   onBack,
   onRepeat,
   onNavigate,
+  onSeek,
   onSpeedChange,
   currentSpeed,
 }: {
@@ -33,23 +38,18 @@ export function CookScreen({
   currentStep: Step;
   isPaused: boolean;
   phaseIndex: number;
-  stepIndex: number;
-  chunkIndex: number;
   analyser: AnalyserNode | null;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
+  coreProgress: CoreProgressData;
   onNext: () => void;
   onPause: () => void;
   onResume: () => void;
   onBack: () => void;
   onRepeat: () => void;
   onNavigate: (phaseIndex: number, stepIndex: number) => void;
+  onSeek: (progress: number) => void;
   onSpeedChange: (speed: number) => void;
   currentSpeed: number;
 }) {
-  const coreProgress = useCoreProgress(
-    plan, phaseIndex, stepIndex, chunkIndex, audioRef, !isPaused
-  );
-
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#2A231D] px-5 py-6">
       {/* Top bar */}
@@ -98,28 +98,13 @@ export function CookScreen({
         </p>
       </div>
 
-      {/* Playback scrubber */}
-      <div className="mb-2">
-        <div className="relative h-[3px] w-full rounded-full bg-[#443B31]">
-          <div
-            className="absolute inset-y-0 left-0 rounded-full bg-[#C9944A] transition-[width] duration-200"
-            style={{ width: `${coreProgress.progress * 100}%` }}
-          />
-          {/* Scrubber dot */}
-          <div
-            className="absolute top-1/2 h-[10px] w-[10px] -translate-y-1/2 rounded-full bg-[#F5F0EB] shadow-sm transition-[left] duration-200"
-            style={{ left: `calc(${coreProgress.progress * 100}% - 5px)` }}
-          />
-        </div>
-        <div className="mt-1.5 flex justify-between">
-          <span className="text-[10px] tabular-nums text-[#887B6C]">
-            {coreProgress.elapsedFormatted}
-          </span>
-          <span className="text-[10px] tabular-nums text-[#887B6C]">
-            {coreProgress.remainingFormatted}
-          </span>
-        </div>
-      </div>
+      {/* Playback scrubber — tappable and draggable */}
+      <Scrubber
+        progress={coreProgress.progress}
+        elapsedFormatted={coreProgress.elapsedFormatted}
+        remainingFormatted={coreProgress.remainingFormatted}
+        onSeek={onSeek}
+      />
 
       {/* Step navigator */}
       <StepNavigator

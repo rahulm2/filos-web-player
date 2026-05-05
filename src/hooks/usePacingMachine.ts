@@ -146,6 +146,16 @@ function createReducer(plan: PlaybackPlan) {
         };
       }
 
+      case "NAVIGATE_CHUNK": {
+        return {
+          ...s,
+          state: "PLAYING",
+          phaseIndex: action.phaseIndex,
+          stepIndex: action.stepIndex,
+          chunkIndex: action.chunkIndex,
+        };
+      }
+
       case "RESTART": {
         return {
           state: "LOADING",

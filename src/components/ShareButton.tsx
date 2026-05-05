@@ -19,7 +19,7 @@ export function ShareButton({ variant = "dark" }: { variant?: "dark" | "light" }
         return;
       }
     } catch {
-      // User cancelled or share failed — fall through to clipboard
+      // User cancelled or share failed
     }
 
     try {
@@ -31,22 +31,29 @@ export function ShareButton({ variant = "dark" }: { variant?: "dark" | "light" }
     }
   };
 
-  const colors = variant === "dark"
-    ? "border-[#443B31] text-[#887B6C] hover:border-[#F5F0EB] hover:text-[#F5F0EB]"
-    : "border-[#DDD5CB] text-[#887B6C] hover:border-[#2A231D] hover:text-[#2A231D]";
+  const bg = variant === "dark"
+    ? "bg-[#443B31] hover:bg-[#5C5347] text-[#F5F0EB]"
+    : "bg-[#EDE6DD] hover:bg-[#DDD5CB] text-[#2A231D]";
 
   return (
     <button
       onClick={handleShare}
-      className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition-all active:scale-95 ${colors}`}
+      className={`relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-all active:scale-90 ${bg}`}
       aria-label="Share"
     >
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
-        <polyline points="16 6 12 2 8 6" />
-        <line x1="12" y1="2" x2="12" y2="15" />
-      </svg>
-      {copied ? "Copied!" : "Share"}
+      {copied ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+        </svg>
+      )}
     </button>
   );
 }
