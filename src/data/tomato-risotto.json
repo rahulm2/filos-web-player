@@ -49,7 +49,15 @@
           "gate": {
             "cascade": [
               { "type": "silence", "duration_seconds": 12 },
-              { "type": "heartbeat", "fallback_message": "Take your time gathering everything..." },
+              {
+                "type": "heartbeat",
+                "chunk": {
+                  "chunk_id": "stock-tangent-collagen-hb",
+                  "start_time": 308.3,
+                  "end_time": 419.5
+                },
+                "fallback_message": "Take your time gathering everything..."
+              },
               { "type": "silence", "duration_seconds": 15 },
               {
                 "type": "elastic",
