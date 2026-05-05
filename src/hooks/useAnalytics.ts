@@ -13,19 +13,26 @@ function ensurePostHogInit() {
     console.warn("[Analytics] No NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN — events will be no-ops");
     return;
   }
+  // Clear stale PostHog config that may have cached old /ingest api_host
+  try {
+    const keys = Object.keys(localStorage);
+    for (const key of keys) {
+      if (key.startsWith("ph_") && key.includes("posthog")) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // localStorage may not be available
+  }
+
   posthog.init(token, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
+    api_host: "https://us.i.posthog.com",
     capture_pageview: false,
     capture_pageleave: true,
-    persistence: "localStorage",
+    persistence: "memory",
     disable_session_recording: false,
     autocapture: false,
     enable_heatmaps: false,
-    loaded: (ph) => {
-      if (process.env.NODE_ENV === "development") {
-        console.log("[PostHog] initialized, distinct_id:", ph.get_distinct_id());
-      }
-    },
   });
 }
 
