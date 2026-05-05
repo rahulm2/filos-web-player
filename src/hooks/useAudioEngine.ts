@@ -29,7 +29,7 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     if (!audioRef.current) {
       const audio = new Audio();
       audio.src = audioUrl;
-      audio.preload = "metadata";
+      audio.preload = "auto";
       audio.crossOrigin = "anonymous";
       audio.setAttribute("playsinline", "");
       audioRef.current = audio;
