@@ -3,17 +3,24 @@
 import { useCallback, useEffect, useRef } from "react";
 import posthog from "posthog-js";
 
-// Initialize PostHog once
 let initialized = false;
+let useServerRelay = false;
+
 function ensurePostHogInit() {
   if (initialized || typeof window === "undefined") return;
-  initialized = true; // mark early to prevent re-entry
+  initialized = true;
   const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   if (!token) {
     console.warn("[Analytics] No NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN — events will be no-ops");
     return;
   }
-  // Clear stale PostHog config that may have cached old /ingest api_host
+
+  // Safari ITP blocks third-party requests to posthog.com
+  // Detect Safari and use server relay instead
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  useServerRelay = isSafari;
+
+  // Clear stale config
   try {
     const keys = Object.keys(localStorage);
     for (const key of keys) {
@@ -21,19 +28,31 @@ function ensurePostHogInit() {
         localStorage.removeItem(key);
       }
     }
-  } catch {
-    // localStorage may not be available
-  }
+  } catch {}
 
-  posthog.init(token, {
-    api_host: "https://us.i.posthog.com",
-    capture_pageview: false,
-    capture_pageleave: true,
-    persistence: "memory",
-    disable_session_recording: false,
-    autocapture: false,
-    enable_heatmaps: false,
-  });
+  if (!isSafari) {
+    posthog.init(token, {
+      api_host: "https://us.i.posthog.com",
+      capture_pageview: false,
+      capture_pageleave: true,
+      persistence: "memory",
+      disable_session_recording: false,
+      autocapture: false,
+      enable_heatmaps: false,
+    });
+  }
+}
+
+function serverTrack(event: string, properties?: Record<string, unknown>) {
+  try {
+    const payload = JSON.stringify({
+      event,
+      properties: { ...properties, $lib: "server-relay" },
+      timestamp: Date.now(),
+      distinct_id: "safari-" + (Math.random().toString(36).slice(2, 10)),
+    });
+    navigator.sendBeacon("/api/track", payload);
+  } catch {}
 }
 
 type EventName =
@@ -57,10 +76,12 @@ export function useAnalytics() {
   const track = useCallback((event: EventName, properties?: Record<string, unknown>) => {
     try {
       ensurePostHogInit();
-      posthog.capture(event, properties);
-    } catch {
-      // Analytics should never break the app
-    }
+      if (useServerRelay) {
+        serverTrack(event, properties);
+      } else {
+        posthog.capture(event, properties);
+      }
+    } catch {}
   }, []);
 
   return { track };
@@ -83,22 +104,20 @@ export function useAbandonTracking(
       sent = true;
 
       const properties = { last_state: state, last_step_id: stepId, audio_position: audioPosition };
-      try {
-        posthog.capture("session_abandon", properties);
-      } catch {
-        // fall through
+      if (useServerRelay) {
+        serverTrack("session_abandon", properties);
+      } else {
+        try { posthog.capture("session_abandon", properties); } catch {}
       }
 
-      // Beacon fallback for tab close
+      // Beacon fallback
       try {
         const blob = new Blob(
           [JSON.stringify({ event: "session_abandon", properties, timestamp: Date.now() })],
           { type: "application/json" }
         );
         navigator.sendBeacon("/api/track", blob);
-      } catch {
-        // best effort
-      }
+      } catch {}
     };
 
     const onVisibility = () => {
