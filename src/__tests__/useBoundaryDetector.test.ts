@@ -105,6 +105,5 @@ describe("useBoundaryDetector", () => {
     vi.advanceTimersByTime(6000);
 
     expect(onBoundary).not.toHaveBeenCalled();
-    expect(mockAudio.removeEventListener).toHaveBeenCalled();
   });
 });

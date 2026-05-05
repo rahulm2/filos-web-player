@@ -18,7 +18,7 @@ export function useBoundaryDetector(
     generationRef.current++;
     const gen = generationRef.current;
 
-    let raf: number;
+    let interval: ReturnType<typeof setInterval>;
     let fallbackTimeout: ReturnType<typeof setTimeout>;
 
     const fire = () => {
@@ -28,28 +28,22 @@ export function useBoundaryDetector(
       onBoundary();
     };
 
-    const checkBoundary = () => {
-      if (firedRef.current || gen !== generationRef.current) return;
-      const ct = audio.currentTime;
-      if (ct >= startTime && ct >= endTime) {
-        fire();
-      }
-    };
-
-    // Use timeupdate (iOS fires this reliably ~4Hz) + rAF (desktop precision)
-    const onTimeUpdate = () => checkBoundary();
-    audio.addEventListener("timeupdate", onTimeUpdate);
-
-    const tick = () => {
-      if (firedRef.current || gen !== generationRef.current) return;
-      checkBoundary();
-      raf = requestAnimationFrame(tick);
-    };
-
-    // Delay start — let playFrom() seek first
+    // Use setInterval at 30ms for tight polling — more reliable than
+    // rAF on iOS which gets throttled, and more frequent than timeupdate (~250ms)
     const startDelay = setTimeout(() => {
       if (gen !== generationRef.current) return;
-      raf = requestAnimationFrame(tick);
+
+      interval = setInterval(() => {
+        if (firedRef.current || gen !== generationRef.current) {
+          clearInterval(interval);
+          return;
+        }
+        const ct = audio.currentTime;
+        if (ct >= startTime && ct >= endTime) {
+          clearInterval(interval);
+          fire();
+        }
+      }, 30);
 
       // Fallback timeout for background tabs
       const rate = audio.playbackRate || 1;
@@ -64,9 +58,8 @@ export function useBoundaryDetector(
     }, 150);
 
     return () => {
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      cancelAnimationFrame(raf);
       clearTimeout(startDelay);
+      clearInterval(interval);
       clearTimeout(fallbackTimeout);
     };
   }, [audio, endTime, startTime, onBoundary]);
