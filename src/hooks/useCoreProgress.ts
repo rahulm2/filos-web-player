@@ -65,29 +65,34 @@ export function useCoreProgress(
 
     const baseElapsed = elapsed;
 
-    if (!isPlaying || !audioRef.current) {
-      setElapsedCoreDuration(baseElapsed);
-      return;
-    }
-
-    // Get current chunk to track progress within it
     const currentPhase = plan.phases[phaseIndex];
     const currentStep = currentPhase?.steps[stepIndex];
     const currentChunk = currentStep?.core_chunks[chunkIndex];
 
-    if (!currentChunk) {
+    // Helper to compute elapsed including progress within current chunk
+    const computeElapsed = () => {
+      const audio = audioRef.current;
+      if (!audio || !currentChunk) return baseElapsed;
+      const withinChunk = Math.max(0, Math.min(
+        audio.currentTime - currentChunk.start_time,
+        currentChunk.end_time - currentChunk.start_time
+      ));
+      return baseElapsed + withinChunk;
+    };
+
+    if (!isPlaying) {
+      // Paused — still read current audio position for accurate display
+      setElapsedCoreDuration(computeElapsed());
+      return;
+    }
+
+    if (!audioRef.current || !currentChunk) {
       setElapsedCoreDuration(baseElapsed);
       return;
     }
 
     const tick = () => {
-      const audio = audioRef.current;
-      if (!audio) return;
-      const withinChunk = Math.max(0, Math.min(
-        audio.currentTime - currentChunk.start_time,
-        currentChunk.end_time - currentChunk.start_time
-      ));
-      setElapsedCoreDuration(baseElapsed + withinChunk);
+      setElapsedCoreDuration(computeElapsed());
       rafRef.current = requestAnimationFrame(tick);
     };
 
