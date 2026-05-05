@@ -118,12 +118,14 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     }
 
     if (pacing.state === "SEAM") {
+      engine.pause();
       seamTimerRef.current = setTimeout(() => {
         pacing.dispatch({ type: "SEAM_ELAPSED" });
       }, timing.seamMs);
     }
 
     if (pacing.state === "WAITING" || pacing.state === "PHASE_GATE") {
+      engine.pause();
       const gate = currentStep?.gate;
       if (gate) {
         track("gate_enter", { step_id: currentStep.step_id });

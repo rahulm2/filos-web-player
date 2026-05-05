@@ -24,14 +24,14 @@ export function useBoundaryDetector(
     const fire = () => {
       if (firedRef.current || gen !== generationRef.current) return;
       firedRef.current = true;
-      audio.pause();
+      // Don't pause here — the next state (SEAM/WAITING/PHASE_GATE) handles audio.
+      // Pausing here on iOS causes an audible cut because the audio buffer doesn't flush.
       onBoundary();
     };
 
     const checkBoundary = () => {
       if (firedRef.current || gen !== generationRef.current) return;
       const ct = audio.currentTime;
-      // Only fire if we're genuinely in this chunk's territory AND past end
       if (ct >= startTime && ct >= endTime) {
         fire();
       }

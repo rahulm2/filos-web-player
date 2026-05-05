@@ -56,7 +56,7 @@ describe("useBoundaryDetector", () => {
     vi.advanceTimersByTime(3000);
 
     expect(onBoundary).toHaveBeenCalledTimes(1);
-    expect(mockAudio.pause).toHaveBeenCalled();
+    // pause is no longer called by boundary detector — handled by state effect
   });
 
   it("does not fire when audio is outside chunk range", () => {
