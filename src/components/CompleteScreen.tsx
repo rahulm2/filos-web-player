@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { PlaybackPlan } from "@/lib/types";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { ProgressBar } from "./ProgressBar";
+import { ShareButton } from "./ShareButton";
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -81,6 +82,9 @@ export function CompleteScreen({ plan, onRestart }: { plan: PlaybackPlan; onRest
           <p className="mt-1 text-[13px] text-[#887B6C]">
             You just cooked with {plan.recipe.creator.split(" ")[0]}.
           </p>
+          <div className="mt-3">
+            <ShareButton variant="light" />
+          </div>
         </div>
 
         <div className="mt-6 h-[0.5px] bg-[#DDD5CB]" />

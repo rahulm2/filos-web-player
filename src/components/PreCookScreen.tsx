@@ -7,13 +7,16 @@ import { ConfirmationAlert } from "./ConfirmationAlert";
 import { ProgressBar } from "./ProgressBar";
 import { InstagramPrompt } from "./InstagramPrompt";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { ShareButton } from "./ShareButton";
 
 export function PreCookScreen({
   plan,
   onStart,
+  isInitializing,
 }: {
   plan: PlaybackPlan;
   onStart: () => void;
+  isInitializing: boolean;
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const { track } = useAnalytics();
@@ -35,7 +38,7 @@ export function PreCookScreen({
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#F5F0EB]" />
         </div>
 
-        {/* Creator photo + header */}
+        {/* Creator photo + header + share */}
         <div className="mt-4 flex items-center gap-3">
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
             <Image
@@ -45,7 +48,7 @@ export function PreCookScreen({
               className="object-cover"
             />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
               Cook with
             </p>
@@ -53,6 +56,7 @@ export function PreCookScreen({
               {plan.recipe.creator}
             </h1>
           </div>
+          <ShareButton variant="light" />
         </div>
 
         <h2 className="mt-3 font-[family-name:var(--font-fraunces)] text-[18px] text-[#2A231D]">
@@ -178,6 +182,7 @@ export function PreCookScreen({
           creatorFirstName={plan.recipe.creator.split(" ")[0]}
           onConfirm={onStart}
           onDismiss={() => setShowConfirm(false)}
+          isLoading={isInitializing}
         />
       )}
     </div>

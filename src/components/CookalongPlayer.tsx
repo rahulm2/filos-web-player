@@ -23,6 +23,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const seamTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isResuming = useRef(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const handleSpeedChange = useCallback((speed: number) => {
     setPlaybackSpeed(speed);
@@ -124,9 +125,11 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
   // Handlers
   const handleStart = useCallback(async () => {
+    setIsInitializing(true);
     track("session_start", {});
     await engine.init();
     pacing.dispatch({ type: "START" });
+    setIsInitializing(false);
   }, [engine, pacing, track]);
 
   const handlePause = useCallback(() => {
@@ -166,7 +169,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   // Render based on state
   switch (pacing.state) {
     case "LOADING":
-      return <PreCookScreen plan={plan} onStart={handleStart} />;
+      return <PreCookScreen plan={plan} onStart={handleStart} isInitializing={isInitializing} />;
 
     case "PLAYING":
     case "SEAM":

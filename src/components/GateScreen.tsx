@@ -6,6 +6,7 @@ import { ProgressBar } from "./ProgressBar";
 import { TransportControls } from "./TransportControls";
 import { Waveform } from "./Waveform";
 import { StepNavigator } from "./StepNavigator";
+import { ShareButton } from "./ShareButton";
 
 export function GateScreen({
   plan,
@@ -50,10 +51,13 @@ export function GateScreen({
         />
       </div>
 
-      {/* Phase label */}
-      <p className="mt-3 text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
-        {currentPhase.phase_name}
-      </p>
+      {/* Phase label + share */}
+      <div className="mt-3 flex items-center justify-between">
+        <p className="text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
+          {currentPhase.phase_name}
+        </p>
+        <ShareButton variant="dark" />
+      </div>
 
       {/* Center content */}
       <div className="flex flex-1 flex-col items-center justify-center">

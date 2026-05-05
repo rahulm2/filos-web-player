@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import { timing } from "@/lib/constants";
 
 interface AudioEngine {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   analyserRef: React.RefObject<AnalyserNode | null>;
   isReady: boolean;
+  isBuffering: boolean;
   init: () => Promise<void>;
   playFrom: (startTime: number, endTime: number) => void;
   pause: () => void;
@@ -22,27 +23,44 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
   const gainRef = useRef<GainNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
+
+  // Prefetch: create audio element immediately and start loading
+  useEffect(() => {
+    if (audioRef.current) return;
+    const audio = new Audio();
+    audio.src = audioUrl;
+    audio.preload = "auto";
+    audio.crossOrigin = "anonymous";
+    audio.setAttribute("playsinline", "");
+    audioRef.current = audio;
+
+    // Track buffering state
+    const onWaiting = () => setIsBuffering(true);
+    const onCanPlay = () => setIsBuffering(false);
+    const onPlaying = () => setIsBuffering(false);
+    audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("canplay", onCanPlay);
+    audio.addEventListener("playing", onPlaying);
+
+    return () => {
+      audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("canplay", onCanPlay);
+      audio.removeEventListener("playing", onPlaying);
+    };
+  }, [audioUrl]);
 
   const init = useCallback(async () => {
     if (ctxRef.current) return;
 
-    if (!audioRef.current) {
-      const audio = new Audio();
-      audio.src = audioUrl;
-      audio.preload = "auto";
-      audio.crossOrigin = "anonymous";
-      audio.setAttribute("playsinline", "");
-      audioRef.current = audio;
-    }
-
     const audio = audioRef.current;
+    if (!audio) return;
 
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
     await ctx.resume();
 
     // Prime audio element — play+pause unlocks iOS audio
-    // Must await play() before calling pause() to avoid AbortError
     audio.load();
     try {
       const playPromise = audio.play();
@@ -52,7 +70,6 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
         audio.currentTime = 0;
       }
     } catch {
-      // Expected on browsers that block autoplay — element is still primed
       audio.currentTime = 0;
     }
 
@@ -75,7 +92,7 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     gainRef.current = gain;
     analyserRef.current = analyser;
     setIsReady(true);
-  }, [audioUrl]);
+  }, []);
 
   const playFrom = useCallback((startTime: number, _endTime: number) => {
     const audio = audioRef.current;
@@ -137,5 +154,5 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     audio.preservesPitch = true;
   }, []);
 
-  return { audioRef, analyserRef, isReady, init, playFrom, pause, resume, fadeOut, getCurrentTime, setSpeed };
+  return { audioRef, analyserRef, isReady, isBuffering, init, playFrom, pause, resume, fadeOut, getCurrentTime, setSpeed };
 }
