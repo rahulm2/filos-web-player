@@ -3,6 +3,13 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { timing } from "@/lib/constants";
 
+// iOS Safari has known issues with blob: URLs for audio (416 Range errors)
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
 interface AudioEngine {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   analyserRef: React.RefObject<AnalyserNode | null>;
@@ -28,10 +35,35 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
   const [isBuffering, setIsBuffering] = useState(false);
   const [preloadProgress, setPreloadProgress] = useState(0);
 
-  // Prefetch entire file as blob on mount — all seeks from memory after this
   useEffect(() => {
     let cancelled = false;
+    const ios = isIOS();
 
+    const createAudioElement = (src: string) => {
+      if (audioRef.current) return;
+      const audio = new Audio();
+      audio.src = src;
+      audio.preload = "auto";
+      audio.crossOrigin = "anonymous";
+      audio.setAttribute("playsinline", "");
+      audioRef.current = audio;
+
+      const onWaiting = () => setIsBuffering(true);
+      const onCanPlay = () => setIsBuffering(false);
+      const onPlaying = () => setIsBuffering(false);
+      audio.addEventListener("waiting", onWaiting);
+      audio.addEventListener("canplay", onCanPlay);
+      audio.addEventListener("playing", onPlaying);
+    };
+
+    if (ios) {
+      // iOS: use direct URL — blob URLs cause 416 range errors on Safari
+      createAudioElement(audioUrl);
+      setPreloadProgress(1);
+      return;
+    }
+
+    // Android/Desktop: download as blob for instant seeking
     const prefetch = async () => {
       try {
         const response = await fetch(audioUrl);
@@ -41,7 +73,6 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
         const contentLength = Number(response.headers.get("content-length")) || 0;
 
         if (!reader) {
-          // Fallback: no streaming reader, just get the blob directly
           const blob = await (await fetch(audioUrl)).blob();
           if (cancelled) return;
           blobUrlRef.current = URL.createObjectURL(blob);
@@ -50,7 +81,6 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
           return;
         }
 
-        // Stream download with progress
         const chunks: BlobPart[] = [];
         let received = 0;
 
@@ -70,27 +100,9 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
         setPreloadProgress(1);
         createAudioElement(blobUrlRef.current);
       } catch {
-        // Fallback: use original URL (will make range requests on seek)
         createAudioElement(audioUrl);
         setPreloadProgress(1);
       }
-    };
-
-    const createAudioElement = (src: string) => {
-      if (audioRef.current) return;
-      const audio = new Audio();
-      audio.src = src;
-      audio.preload = "auto";
-      audio.crossOrigin = "anonymous";
-      audio.setAttribute("playsinline", "");
-      audioRef.current = audio;
-
-      const onWaiting = () => setIsBuffering(true);
-      const onCanPlay = () => setIsBuffering(false);
-      const onPlaying = () => setIsBuffering(false);
-      audio.addEventListener("waiting", onWaiting);
-      audio.addEventListener("canplay", onCanPlay);
-      audio.addEventListener("playing", onPlaying);
     };
 
     prefetch();
@@ -111,7 +123,11 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
 
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
-    await ctx.resume();
+
+    // iOS requires resume in multiple states (suspended AND interrupted)
+    if (ctx.state !== "running") {
+      await ctx.resume();
+    }
 
     // Prime audio element
     audio.load();
@@ -134,7 +150,7 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     const gain = ctx.createGain();
     source.connect(analyser).connect(gain).connect(ctx.destination);
 
-    // Silent oscillator for mute switch
+    // Silent oscillator for mute switch workaround
     const osc = ctx.createOscillator();
     const silentGain = ctx.createGain();
     silentGain.gain.value = 0.001;
@@ -147,30 +163,35 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     setIsReady(true);
   }, []);
 
+  const ensureContextRunning = useCallback(async () => {
+    const ctx = ctxRef.current;
+    if (ctx && ctx.state !== "running") {
+      try { await ctx.resume(); } catch {}
+    }
+  }, []);
+
   const playFrom = useCallback((startTime: number, _endTime: number) => {
     const audio = audioRef.current;
     const gain = gainRef.current;
     const ctx = ctxRef.current;
     if (!audio || !gain || !ctx) return;
 
+    ensureContextRunning();
     gain.gain.cancelScheduledValues(ctx.currentTime);
     gain.gain.setValueAtTime(1, ctx.currentTime);
 
     audio.currentTime = startTime;
-    audio.play();
-  }, []);
+    audio.play().catch(() => {});
+  }, [ensureContextRunning]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
   }, []);
 
   const resume = useCallback(() => {
-    const ctx = ctxRef.current;
-    if (ctx && ctx.state !== "running") {
-      ctx.resume();
-    }
-    audioRef.current?.play();
-  }, []);
+    ensureContextRunning();
+    audioRef.current?.play().catch(() => {});
+  }, [ensureContextRunning]);
 
   const fadeOut = useCallback((): Promise<void> => {
     return new Promise((resolve) => {

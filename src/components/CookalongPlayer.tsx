@@ -157,10 +157,19 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   }, [engine, cascade, pacing]);
 
   const handleResume = useCallback(() => {
-    if (cascade.state.isRunning) cascade.resumeCascade();
-    isResuming.current = true;
+    const prevState = pacing.previousState;
+    if (cascade.state.isRunning) {
+      // Resuming into a cascade (WAITING/PHASE_GATE) — cascade handles audio
+      cascade.resumeCascade();
+      if (cascade.state.isPlayingAudio) {
+        engine.resume();
+      }
+    } else if (prevState === "PLAYING" || prevState === "SEAM") {
+      // Resuming core playback
+      isResuming.current = true;
+    }
     pacing.dispatch({ type: "RESUME" });
-  }, [cascade, pacing]);
+  }, [cascade, pacing, engine]);
 
   const handleBack = useCallback(() => {
     engine.pause();
