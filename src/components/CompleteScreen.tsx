@@ -5,20 +5,56 @@ import type { PlaybackPlan } from "@/lib/types";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { ProgressBar } from "./ProgressBar";
 
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 export function CompleteScreen({ plan }: { plan: PlaybackPlan }) {
   const { track } = useAnalytics();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSurvey = (question: string, answer: string) => {
     setAnswers((prev) => ({ ...prev, [question]: answer }));
     track("survey_response", { question, answer });
   };
 
-  const handleEmailSubmit = () => {
-    if (email.trim()) {
+  const handleEmailSubmit = async () => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setEmailError("Please enter your email");
+      return;
+    }
+    if (!isValidEmail(trimmed)) {
+      setEmailError("Please enter a valid email");
+      return;
+    }
+
+    setEmailError("");
+    setSubmitting(true);
+
+    try {
+      // Send to analytics + API
       track("email_submit", { has_email: true });
+      await fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "email_submit",
+          properties: { email: trimmed, recipe: plan.recipe.title },
+          timestamp: Date.now(),
+        }),
+      });
+      setSubmitted(true);
       setEmail("");
+    } catch {
+      // Still mark as submitted — analytics captured it
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -111,21 +147,56 @@ export function CompleteScreen({ plan }: { plan: PlaybackPlan }) {
           <p className="mt-0.5 text-[12px] text-[#887B6C]">
             We&apos;ll let you know &mdash; nothing else.
           </p>
-          <div className="mt-3 flex gap-2">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="flex-1 rounded-lg border border-[#DDD5CB] bg-white px-3 py-2 text-[13px] placeholder:text-[#B0A89D] focus:border-[#C9944A] focus:outline-none"
-            />
-            <button
-              onClick={handleEmailSubmit}
-              className="cursor-pointer rounded-lg bg-[#2A231D] px-4 py-2 text-[13px] font-medium text-[#F5F0EB] transition-colors hover:bg-[#3D342C] active:scale-[0.97]"
-            >
-              Submit
-            </button>
-          </div>
+
+          {submitted ? (
+            <div className="mt-3 rounded-lg bg-[#EDE6DD] px-4 py-3">
+              <p className="text-[13px] text-[#2A231D]">
+                You&apos;re in! We&apos;ll let you know.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailError) setEmailError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleEmailSubmit();
+                  }}
+                  placeholder="your@email.com"
+                  className={`flex-1 rounded-lg border bg-white px-3 py-2 text-[13px] placeholder:text-[#B0A89D] focus:outline-none ${
+                    emailError
+                      ? "border-red-400 focus:border-red-400"
+                      : "border-[#DDD5CB] focus:border-[#C9944A]"
+                  }`}
+                />
+                <button
+                  onClick={handleEmailSubmit}
+                  disabled={submitting}
+                  className="cursor-pointer rounded-lg bg-[#2A231D] px-4 py-2 text-[13px] font-medium text-[#F5F0EB] transition-all hover:bg-[#3D342C] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? (
+                    <span className="flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+                        <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+                      </svg>
+                      Sending
+                    </span>
+                  ) : (
+                    "Submit"
+                  )}
+                </button>
+              </div>
+              {emailError && (
+                <p className="mt-1 text-[11px] text-red-500">{emailError}</p>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
