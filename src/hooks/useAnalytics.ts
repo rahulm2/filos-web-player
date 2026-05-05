@@ -3,6 +3,22 @@
 import { useCallback, useEffect, useRef } from "react";
 import posthog from "posthog-js";
 
+// Initialize PostHog once
+let initialized = false;
+function ensurePostHogInit() {
+  if (initialized || typeof window === "undefined") return;
+  const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+  if (!token) return;
+  posthog.init(token, {
+    api_host: "/ingest",
+    ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
+    capture_pageview: false, // we fire page_view manually
+    capture_pageleave: true,
+    persistence: "localStorage",
+  });
+  initialized = true;
+}
+
 type EventName =
   | "page_view"
   | "cta_tapped"
@@ -17,8 +33,13 @@ type EventName =
   | "email_submit";
 
 export function useAnalytics() {
+  useEffect(() => {
+    ensurePostHogInit();
+  }, []);
+
   const track = useCallback((event: EventName, properties?: Record<string, unknown>) => {
     try {
+      ensurePostHogInit();
       posthog.capture(event, properties);
     } catch {
       // Analytics should never break the app
@@ -35,6 +56,7 @@ export function useAbandonTracking(
   stateGetterRef.current = getState;
 
   useEffect(() => {
+    ensurePostHogInit();
     let sent = false;
 
     const fire = () => {
@@ -47,7 +69,18 @@ export function useAbandonTracking(
       try {
         posthog.capture("session_abandon", properties);
       } catch {
-        // fall through to beacon
+        // fall through
+      }
+
+      // Beacon fallback for tab close
+      try {
+        const blob = new Blob(
+          [JSON.stringify({ event: "session_abandon", properties, timestamp: Date.now() })],
+          { type: "application/json" }
+        );
+        navigator.sendBeacon("/api/track", blob);
+      } catch {
+        // best effort
       }
     };
 

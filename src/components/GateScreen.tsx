@@ -105,7 +105,7 @@ export function GateScreen({
         </div>
 
         {/* Cascade status */}
-        <p className="mt-4 text-center text-[13px] italic text-[#5C5347]">
+        <p className="mt-4 text-center text-[14px] italic text-[#EDE6DD]">
           {cascadeStatus || "Take your time..."}
         </p>
       </div>
