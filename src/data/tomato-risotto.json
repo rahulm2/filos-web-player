@@ -2,7 +2,7 @@
   "recipe": {
     "title": "Tomato Risotto",
     "creator": "Clare Langan",
-    "creator_photo_url": "/images/clare-photo.jpg",
+    "creator_photo_url": "https://randomuser.me/api/portraits/women/68.jpg",
     "recipe_photo_url": "/images/tomato-risotto.jpg",
     "audio_url": "/audio/tomato-risotto.mp3",
     "total_duration_seconds": 3276,
@@ -21,14 +21,8 @@
           "pacing": "auto",
           "core_chunks": [
             {
-              "chunk_id": "cold-open",
-              "start_time": 0,
-              "end_time": 15,
-              "transcript_preview": "The palm will dissolve pretty quickly... Oof. So good. Taste it now."
-            },
-            {
               "chunk_id": "intro",
-              "start_time": 25,
+              "start_time": 15,
               "end_time": 115,
               "transcript_preview": "I thought that we would make my tomato risotto together today..."
             }

@@ -8,6 +8,7 @@ interface CascadeState {
   isRunning: boolean;
   statusText: string;
   phase: "silence" | "heartbeat" | "elastic" | "idle" | "inactive";
+  isPlayingAudio: boolean;
 }
 
 interface CascadeControls {
@@ -16,7 +17,8 @@ interface CascadeControls {
     cascade: CascadeEntry[],
     playAudio: (start: number, end: number) => void,
     fadeOut: () => Promise<void>,
-    pauseAudio: () => void
+    pauseAudio: () => void,
+    getAudioTime: () => number
   ) => void;
   interrupt: () => Promise<void>;
   pauseCascade: () => void;
@@ -28,53 +30,54 @@ export function useCascadeSequencer(): CascadeControls {
     isRunning: false,
     statusText: "",
     phase: "inactive",
+    isPlayingAudio: false,
   });
 
   const abortRef = useRef(false);
   const pausedRef = useRef(false);
   const currentFadeOut = useRef<(() => Promise<void>) | null>(null);
   const currentPauseAudio = useRef<(() => void) | null>(null);
-  const isPlayingAudio = useRef(false);
+  const isPlayingAudioRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const runningRef = useRef(false);
 
-  const waitMs = useCallback((ms: number): Promise<void> => {
+  const clearPendingTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  const sleep = useCallback((ms: number): Promise<void> => {
     return new Promise((resolve) => {
-      const checkInterval = 100;
       let elapsed = 0;
-      const check = () => {
-        if (abortRef.current) {
-          resolve();
-          return;
-        }
+      const interval = 100;
+      const tick = () => {
+        if (abortRef.current) { resolve(); return; }
         if (pausedRef.current) {
-          timeoutRef.current = setTimeout(check, checkInterval);
+          timeoutRef.current = setTimeout(tick, interval);
           return;
         }
-        elapsed += checkInterval;
-        if (elapsed >= ms) {
-          resolve();
-          return;
-        }
-        timeoutRef.current = setTimeout(check, checkInterval);
+        elapsed += interval;
+        if (elapsed >= ms) { resolve(); return; }
+        timeoutRef.current = setTimeout(tick, interval);
       };
-      timeoutRef.current = setTimeout(check, checkInterval);
+      timeoutRef.current = setTimeout(tick, interval);
     });
   }, []);
 
   const waitForAudioEnd = useCallback((endTime: number, getTime: () => number): Promise<void> => {
     return new Promise((resolve) => {
       const check = () => {
-        if (abortRef.current) {
-          resolve();
+        if (abortRef.current) { resolve(); return; }
+        if (pausedRef.current) {
+          timeoutRef.current = setTimeout(check, 100);
           return;
         }
-        if (getTime() >= endTime) {
-          resolve();
-          return;
-        }
-        timeoutRef.current = setTimeout(check, 50);
+        if (getTime() >= endTime - 0.1) { resolve(); return; }
+        timeoutRef.current = setTimeout(check, 80);
       };
-      timeoutRef.current = setTimeout(check, 50);
+      timeoutRef.current = setTimeout(check, 80);
     });
   }, []);
 
@@ -83,23 +86,27 @@ export function useCascadeSequencer(): CascadeControls {
       cascade: CascadeEntry[],
       playAudio: (start: number, end: number) => void,
       fadeOut: () => Promise<void>,
-      pauseAudio: () => void
+      pauseAudio: () => void,
+      getAudioTime: () => number
     ) => {
+      if (runningRef.current) return;
+      runningRef.current = true;
       abortRef.current = false;
       pausedRef.current = false;
       currentFadeOut.current = fadeOut;
       currentPauseAudio.current = pauseAudio;
+      isPlayingAudioRef.current = false;
 
-      setState({ isRunning: true, statusText: "Take your time...", phase: "silence" });
+      setState({ isRunning: true, statusText: "Take your time...", phase: "silence", isPlayingAudio: false });
 
       const run = async () => {
         for (const entry of cascade) {
-          if (abortRef.current) return;
+          if (abortRef.current) break;
 
           switch (entry.type) {
             case "silence":
-              setState((s) => ({ ...s, phase: "silence", statusText: "Take your time..." }));
-              await waitMs(entry.duration_seconds * 1000);
+              setState((s) => ({ ...s, phase: "silence", statusText: "Take your time...", isPlayingAudio: false }));
+              await sleep(entry.duration_seconds * 1000);
               break;
 
             case "heartbeat":
@@ -107,15 +114,19 @@ export function useCascadeSequencer(): CascadeControls {
                 ...s,
                 phase: "heartbeat",
                 statusText: entry.fallback_message,
+                isPlayingAudio: !!entry.chunk,
               }));
               if (entry.chunk) {
-                isPlayingAudio.current = true;
+                isPlayingAudioRef.current = true;
                 playAudio(entry.chunk.start_time, entry.chunk.end_time);
-                await waitForAudioEnd(entry.chunk.end_time, () => 0); // simplified
-                isPlayingAudio.current = false;
-                pauseAudio();
+                await waitForAudioEnd(entry.chunk.end_time, getAudioTime);
+                if (!abortRef.current) {
+                  pauseAudio();
+                  isPlayingAudioRef.current = false;
+                  setState((s) => ({ ...s, isPlayingAudio: false }));
+                }
               } else {
-                await waitMs(timing.heartbeatTextMs);
+                await sleep(timing.heartbeatTextMs);
               }
               break;
 
@@ -124,50 +135,57 @@ export function useCascadeSequencer(): CascadeControls {
                 ...s,
                 phase: "elastic",
                 statusText: entry.relevance_label
-                  ? `Clare on ${entry.relevance_label.split(" — ")[0].toLowerCase()}...`
+                  ? `${entry.relevance_label.split(" — ")[0]}...`
                   : "Clare's sharing something...",
+                isPlayingAudio: true,
               }));
-              isPlayingAudio.current = true;
+              isPlayingAudioRef.current = true;
               playAudio(entry.chunk.start_time, entry.chunk.end_time);
-              await waitForAudioEnd(entry.chunk.end_time, () => 0); // simplified
-              isPlayingAudio.current = false;
-              pauseAudio();
+              await waitForAudioEnd(entry.chunk.end_time, getAudioTime);
+              if (!abortRef.current) {
+                pauseAudio();
+                isPlayingAudioRef.current = false;
+                setState((s) => ({ ...s, isPlayingAudio: false }));
+              }
               break;
           }
         }
 
-        // Cascade exhausted — idle
+        // Cascade exhausted
         if (!abortRef.current) {
           setState({
             isRunning: true,
             statusText: "Clare's here when you're ready",
             phase: "idle",
+            isPlayingAudio: false,
           });
         }
+        runningRef.current = false;
       };
 
       run();
     },
-    [waitMs, waitForAudioEnd]
+    [sleep, waitForAudioEnd]
   );
 
   const interrupt = useCallback(async () => {
     abortRef.current = true;
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    clearPendingTimeout();
 
-    if (isPlayingAudio.current && currentFadeOut.current) {
+    if (isPlayingAudioRef.current && currentFadeOut.current) {
       await currentFadeOut.current();
-      isPlayingAudio.current = false;
+      isPlayingAudioRef.current = false;
     } else if (currentPauseAudio.current) {
       currentPauseAudio.current();
     }
 
-    setState({ isRunning: false, statusText: "", phase: "inactive" });
-  }, []);
+    runningRef.current = false;
+    setState({ isRunning: false, statusText: "", phase: "inactive", isPlayingAudio: false });
+  }, [clearPendingTimeout]);
 
   const pauseCascade = useCallback(() => {
     pausedRef.current = true;
-    if (isPlayingAudio.current && currentPauseAudio.current) {
+    if (isPlayingAudioRef.current && currentPauseAudio.current) {
       currentPauseAudio.current();
     }
   }, []);

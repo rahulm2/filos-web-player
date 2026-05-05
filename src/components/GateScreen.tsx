@@ -1,8 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import type { PlaybackPlan, Phase, Step } from "@/lib/types";
 import { ProgressBar } from "./ProgressBar";
 import { TransportControls } from "./TransportControls";
+import { Waveform } from "./Waveform";
+import { StepNavigator } from "./StepNavigator";
 
 export function GateScreen({
   plan,
@@ -12,8 +15,11 @@ export function GateScreen({
   nextPhaseName,
   phaseIndex,
   cascadeStatus,
+  cascadeIsPlayingAudio,
+  analyser,
   onNext,
   onPause,
+  onNavigate,
 }: {
   plan: PlaybackPlan;
   currentPhase: Phase;
@@ -22,8 +28,11 @@ export function GateScreen({
   nextPhaseName?: string;
   phaseIndex: number;
   cascadeStatus: string;
+  cascadeIsPlayingAudio?: boolean;
+  analyser: AnalyserNode | null;
   onNext: () => void;
   onPause: () => void;
+  onNavigate: (phaseIndex: number, stepIndex: number) => void;
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-[#2A231D] px-5 py-6">
@@ -44,7 +53,21 @@ export function GateScreen({
       {/* Center content */}
       <div className="flex flex-1 flex-col items-center justify-center">
         {/* Creator photo with honey border */}
-        <div className="h-16 w-16 rounded-full border-[1.5px] border-[#C9944A] bg-[#443B31]" />
+        <div className="relative h-16 w-16 overflow-hidden rounded-full border-[2px] border-[#C9944A]">
+          <Image
+            src={plan.recipe.creator_photo_url}
+            alt={plan.recipe.creator}
+            fill
+            className="object-cover"
+          />
+        </div>
+
+        {/* Audio waveform when cascade is playing */}
+        {cascadeIsPlayingAudio && (
+          <div className="mt-3">
+            <Waveform analyser={analyser} active={true} barCount={11} color="#C9944A" />
+          </div>
+        )}
 
         {/* Gate card */}
         <div className="mt-5 w-full max-w-[300px] rounded-[10px] border-[1.5px] border-[#C9944A] p-4 text-center">
@@ -83,12 +106,20 @@ export function GateScreen({
 
         {/* Cascade status */}
         <p className="mt-4 text-center text-[13px] italic text-[#5C5347]">
-          {cascadeStatus}
+          {cascadeStatus || "Take your time..."}
         </p>
       </div>
 
+      {/* Step navigator */}
+      <StepNavigator
+        plan={plan}
+        currentPhaseIndex={phaseIndex}
+        currentStepIndex={currentPhase.steps.indexOf(currentStep)}
+        onNavigate={onNavigate}
+      />
+
       {/* Transport */}
-      <div className="pb-4">
+      <div className="pb-4 pt-4">
         <TransportControls
           isPaused={false}
           onBack={() => {}}
@@ -98,6 +129,7 @@ export function GateScreen({
           onNext={onNext}
         />
       </div>
+
     </div>
   );
 }

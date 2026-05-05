@@ -21,6 +21,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const cascade = useCascadeSequencer();
   const { track } = useAnalytics();
   const seamTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isResuming = useRef(false);
 
   const currentPhase = plan.phases[pacing.phaseIndex];
   const currentStep = currentPhase?.steps[pacing.stepIndex];
@@ -29,6 +30,17 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   useWakeLock(pacing.state !== "LOADING" && pacing.state !== "COMPLETE");
 
   // Media Session
+  const handleNext = useCallback(async () => {
+    if (pacing.state === "WAITING" || pacing.state === "PHASE_GATE") {
+      await cascade.interrupt();
+      track("gate_advance", { step_id: currentStep?.step_id });
+      pacing.dispatch({ type: "ADVANCE" });
+    } else if (pacing.state === "PLAYING") {
+      engine.pause();
+      pacing.dispatch({ type: "ADVANCE" });
+    }
+  }, [pacing, cascade, engine, currentStep, track]);
+
   useMediaSession(plan, {
     onPlay: () => pacing.dispatch({ type: "RESUME" }),
     onPause: () => pacing.dispatch({ type: "PAUSE" }),
@@ -59,7 +71,13 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   // React to state changes
   useEffect(() => {
     if (pacing.state === "PLAYING" && pacing.currentChunk) {
-      engine.playFrom(pacing.currentChunk.start_time, pacing.currentChunk.end_time);
+      if (isResuming.current) {
+        // Resume from current position, don't seek
+        isResuming.current = false;
+        engine.resume();
+      } else {
+        engine.playFrom(pacing.currentChunk.start_time, pacing.currentChunk.end_time);
+      }
     }
 
     if (pacing.state === "SEAM") {
@@ -76,7 +94,8 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           gate.cascade,
           (start, end) => engine.playFrom(start, end),
           () => engine.fadeOut(),
-          () => engine.pause()
+          () => engine.pause(),
+          () => engine.getCurrentTime()
         );
       }
     }
@@ -94,17 +113,6 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     pacing.dispatch({ type: "START" });
   }, [engine, pacing, track]);
 
-  const handleNext = useCallback(async () => {
-    if (pacing.state === "WAITING" || pacing.state === "PHASE_GATE") {
-      await cascade.interrupt();
-      track("gate_advance", { step_id: currentStep?.step_id });
-      pacing.dispatch({ type: "ADVANCE" });
-    } else if (pacing.state === "PLAYING") {
-      engine.pause();
-      pacing.dispatch({ type: "ADVANCE" });
-    }
-  }, [pacing, cascade, engine, currentStep, track]);
-
   const handlePause = useCallback(() => {
     engine.pause();
     if (cascade.state.isRunning) cascade.pauseCascade();
@@ -113,11 +121,9 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
   const handleResume = useCallback(() => {
     if (cascade.state.isRunning) cascade.resumeCascade();
+    isResuming.current = true;
     pacing.dispatch({ type: "RESUME" });
-    if (pacing.previousState === "PLAYING") {
-      engine.resume();
-    }
-  }, [engine, cascade, pacing]);
+  }, [cascade, pacing]);
 
   const handleBack = useCallback(() => {
     engine.pause();
@@ -129,6 +135,12 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     engine.pause();
     pacing.dispatch({ type: "REPEAT" });
   }, [engine, pacing]);
+
+  const handleNavigate = useCallback(async (phaseIndex: number, stepIndex: number) => {
+    engine.pause();
+    if (cascade.state.isRunning) await cascade.interrupt();
+    pacing.dispatch({ type: "NAVIGATE", phaseIndex, stepIndex });
+  }, [engine, cascade, pacing]);
 
   // Render based on state
   switch (pacing.state) {
@@ -145,11 +157,13 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           currentStep={currentStep}
           isPaused={pacing.state === "PAUSED"}
           phaseIndex={pacing.phaseIndex}
+          analyser={engine.analyserRef.current}
           onNext={handleNext}
           onPause={handlePause}
           onResume={handleResume}
           onBack={handleBack}
           onRepeat={handleRepeat}
+          onNavigate={handleNavigate}
         />
       );
 
@@ -168,8 +182,11 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           }
           phaseIndex={pacing.phaseIndex}
           cascadeStatus={cascade.state.statusText}
+          cascadeIsPlayingAudio={cascade.state.isPlayingAudio}
+          analyser={engine.analyserRef.current}
           onNext={handleNext}
           onPause={handlePause}
+          onNavigate={handleNavigate}
         />
       );
 

@@ -136,6 +136,16 @@ function createReducer(plan: PlaybackPlan) {
         return { ...s, state: "PLAYING", chunkIndex: 0 };
       }
 
+      case "NAVIGATE": {
+        return {
+          ...s,
+          state: "PLAYING",
+          phaseIndex: action.phaseIndex,
+          stepIndex: action.stepIndex,
+          chunkIndex: 0,
+        };
+      }
+
       default:
         return s;
     }

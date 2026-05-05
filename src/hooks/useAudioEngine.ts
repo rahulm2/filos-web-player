@@ -5,6 +5,7 @@ import { timing } from "@/lib/constants";
 
 interface AudioEngine {
   audioRef: React.RefObject<HTMLAudioElement | null>;
+  analyserRef: React.RefObject<AnalyserNode | null>;
   isReady: boolean;
   init: () => Promise<void>;
   playFrom: (startTime: number, endTime: number) => void;
@@ -18,12 +19,12 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   const init = useCallback(async () => {
     if (ctxRef.current) return;
 
-    // Create audio element if not exists
     if (!audioRef.current) {
       const audio = new Audio();
       audio.src = audioUrl;
@@ -35,27 +36,29 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
 
     const audio = audioRef.current;
 
-    // Create AudioContext
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
     await ctx.resume();
 
-    // Prime audio element (must happen in user gesture)
+    // Prime audio element
     audio.load();
     try {
       await audio.play();
     } catch {
-      // Expected on some browsers
+      // Expected
     }
     audio.pause();
     audio.currentTime = 0;
 
-    // Wire GainNode
+    // Wire: source → analyser → gain → destination
     const source = ctx.createMediaElementSource(audio);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 64;
+    analyser.smoothingTimeConstant = 0.7;
     const gain = ctx.createGain();
-    source.connect(gain).connect(ctx.destination);
+    source.connect(analyser).connect(gain).connect(ctx.destination);
 
-    // Silent oscillator for mute switch workaround
+    // Silent oscillator for mute switch
     const osc = ctx.createOscillator();
     const silentGain = ctx.createGain();
     silentGain.gain.value = 0.001;
@@ -64,6 +67,7 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
 
     ctxRef.current = ctx;
     gainRef.current = gain;
+    analyserRef.current = analyser;
     setIsReady(true);
   }, [audioUrl]);
 
@@ -73,7 +77,6 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     const ctx = ctxRef.current;
     if (!audio || !gain || !ctx) return;
 
-    // Reset gain to full volume
     gain.gain.cancelScheduledValues(ctx.currentTime);
     gain.gain.setValueAtTime(1, ctx.currentTime);
 
@@ -110,7 +113,6 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
 
       setTimeout(() => {
         audio.pause();
-        // Reset gain for next play
         gain.gain.cancelScheduledValues(ctx.currentTime);
         gain.gain.setValueAtTime(1, ctx.currentTime);
         resolve();
@@ -122,5 +124,5 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     return audioRef.current?.currentTime ?? 0;
   }, []);
 
-  return { audioRef, isReady, init, playFrom, pause, resume, fadeOut, getCurrentTime };
+  return { audioRef, analyserRef, isReady, init, playFrom, pause, resume, fadeOut, getCurrentTime };
 }
