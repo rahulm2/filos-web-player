@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlaybackPlan } from "@/lib/types";
 import { useAudioEngine } from "@/hooks/useAudioEngine";
 import { usePacingMachine } from "@/hooks/usePacingMachine";
@@ -22,6 +22,12 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const { track } = useAnalytics();
   const seamTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isResuming = useRef(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+
+  const handleSpeedChange = useCallback((speed: number) => {
+    setPlaybackSpeed(speed);
+    engine.setSpeed(speed);
+  }, [engine]);
 
   const currentPhase = plan.phases[pacing.phaseIndex];
   const currentStep = currentPhase?.steps[pacing.stepIndex];
@@ -182,6 +188,8 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onBack={handleBack}
           onRepeat={handleRepeat}
           onNavigate={handleNavigate}
+          onSpeedChange={handleSpeedChange}
+          currentSpeed={playbackSpeed}
         />
       );
 
@@ -205,6 +213,8 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onNext={handleNext}
           onPause={handlePause}
           onNavigate={handleNavigate}
+          onSpeedChange={handleSpeedChange}
+          currentSpeed={playbackSpeed}
         />
       );
 

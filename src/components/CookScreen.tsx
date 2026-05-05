@@ -24,6 +24,8 @@ export function CookScreen({
   onBack,
   onRepeat,
   onNavigate,
+  onSpeedChange,
+  currentSpeed,
 }: {
   plan: PlaybackPlan;
   currentPhase: Phase;
@@ -40,6 +42,8 @@ export function CookScreen({
   onBack: () => void;
   onRepeat: () => void;
   onNavigate: (phaseIndex: number, stepIndex: number) => void;
+  onSpeedChange: (speed: number) => void;
+  currentSpeed: number;
 }) {
   const coreProgress = useCoreProgress(
     plan, phaseIndex, stepIndex, chunkIndex, audioRef, !isPaused
@@ -130,6 +134,8 @@ export function CookScreen({
           onPause={onPause}
           onResume={onResume}
           onNext={onNext}
+          onSpeedChange={onSpeedChange}
+          currentSpeed={currentSpeed}
         />
       </div>
     </div>

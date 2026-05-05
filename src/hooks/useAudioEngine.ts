@@ -13,6 +13,7 @@ interface AudioEngine {
   resume: () => void;
   fadeOut: () => Promise<void>;
   getCurrentTime: () => number;
+  setSpeed: (speed: number) => void;
 }
 
 export function useAudioEngine(audioUrl: string): AudioEngine {
@@ -129,5 +130,12 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     return audioRef.current?.currentTime ?? 0;
   }, []);
 
-  return { audioRef, analyserRef, isReady, init, playFrom, pause, resume, fadeOut, getCurrentTime };
+  const setSpeed = useCallback((speed: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.playbackRate = speed;
+    audio.preservesPitch = true;
+  }, []);
+
+  return { audioRef, analyserRef, isReady, init, playFrom, pause, resume, fadeOut, getCurrentTime, setSpeed };
 }

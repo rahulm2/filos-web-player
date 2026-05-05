@@ -20,6 +20,8 @@ export function GateScreen({
   onNext,
   onPause,
   onNavigate,
+  onSpeedChange,
+  currentSpeed,
 }: {
   plan: PlaybackPlan;
   currentPhase: Phase;
@@ -33,6 +35,8 @@ export function GateScreen({
   onNext: () => void;
   onPause: () => void;
   onNavigate: (phaseIndex: number, stepIndex: number) => void;
+  onSpeedChange: (speed: number) => void;
+  currentSpeed: number;
 }) {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#2A231D] px-5 py-6">
@@ -128,6 +132,8 @@ export function GateScreen({
           onPause={onPause}
           onResume={() => {}}
           onNext={onNext}
+          onSpeedChange={onSpeedChange}
+          currentSpeed={currentSpeed}
         />
       </div>
 
