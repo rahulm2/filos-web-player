@@ -54,9 +54,10 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     }
   }, [pacing, cascade, engine, currentStep, track]);
 
+  const seekRef = useRef<((p: number) => void) | null>(null);
+
   useMediaSession(plan, {
     onPlay: () => {
-      // Directly resume audio — background state updates may not trigger effects
       engine.resume();
       isResuming.current = true;
       pacing.dispatch({ type: "RESUME" });
@@ -68,7 +69,8 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     },
     onNext: () => handleNext(),
     onPrevious: () => pacing.dispatch({ type: "GO_BACK" }),
-  });
+    onSeek: (p: number) => seekRef.current?.(p),
+  }, coreProgress.totalCoreDuration, coreProgress.elapsedCoreDuration);
 
   // Abandon tracking
   useAbandonTracking(
@@ -204,6 +206,9 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
       }
     }, 50);
   }, [coreProgress, engine, cascade, pacing]);
+
+  // Keep ref in sync for Media Session seek handler
+  seekRef.current = handleSeek;
 
   const handleRestart = useCallback(() => {
     engine.pause();

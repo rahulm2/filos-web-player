@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { PlaybackPlan } from "@/lib/types";
 
 export function useMediaSession(
@@ -10,8 +10,30 @@ export function useMediaSession(
     onPause?: () => void;
     onNext?: () => void;
     onPrevious?: () => void;
-  }
+    onSeek?: (progress: number) => void;
+  },
+  coreDuration?: number,
+  coreElapsed?: number
 ) {
+  const coreDurationRef = useRef(coreDuration ?? 0);
+  const coreElapsedRef = useRef(coreElapsed ?? 0);
+  coreDurationRef.current = coreDuration ?? 0;
+  coreElapsedRef.current = coreElapsed ?? 0;
+
+  // Update position state so the tray scrubber stays in sync
+  useEffect(() => {
+    if (!("mediaSession" in navigator) || !coreDuration) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: coreDuration,
+        position: Math.min(coreElapsed ?? 0, coreDuration),
+        playbackRate: 1,
+      });
+    } catch {
+      // Some browsers reject invalid values
+    }
+  }, [coreDuration, coreElapsed]);
+
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
 
@@ -38,18 +60,31 @@ export function useMediaSession(
       navigator.mediaSession.setActionHandler("previoustrack", handlers.onPrevious);
     }
 
-    // Disable the seek scrubber in the notification tray
-    // Registering these as no-ops tells the OS "don't show seek controls"
+    // Wire seek controls to in-app scrubber logic
     try {
-      navigator.mediaSession.setActionHandler("seekbackward", () => {});
-      navigator.mediaSession.setActionHandler("seekforward", () => {});
-      navigator.mediaSession.setActionHandler("seekto", () => {});
+      navigator.mediaSession.setActionHandler("seekto", (details) => {
+        if (details.seekTime != null && handlers.onSeek && coreDurationRef.current > 0) {
+          const progress = details.seekTime / coreDurationRef.current;
+          handlers.onSeek(Math.max(0, Math.min(1, progress)));
+        }
+      });
+      navigator.mediaSession.setActionHandler("seekbackward", (details) => {
+        const offset = details.seekOffset ?? 10;
+        if (handlers.onSeek && coreDurationRef.current > 0) {
+          const newTime = Math.max(0, coreElapsedRef.current - offset);
+          handlers.onSeek(newTime / coreDurationRef.current);
+        }
+      });
+      navigator.mediaSession.setActionHandler("seekforward", (details) => {
+        const offset = details.seekOffset ?? 10;
+        if (handlers.onSeek && coreDurationRef.current > 0) {
+          const newTime = Math.min(coreDurationRef.current, coreElapsedRef.current + offset);
+          handlers.onSeek(newTime / coreDurationRef.current);
+        }
+      });
     } catch {
-      // Some browsers don't support these handlers
+      // Some browsers don't support these
     }
-
-    // Don't report position — prevents scrubber from appearing
-    // (not calling navigator.mediaSession.setPositionState)
 
     return () => {
       navigator.mediaSession.setActionHandler("play", null);
@@ -57,9 +92,9 @@ export function useMediaSession(
       navigator.mediaSession.setActionHandler("nexttrack", null);
       navigator.mediaSession.setActionHandler("previoustrack", null);
       try {
+        navigator.mediaSession.setActionHandler("seekto", null);
         navigator.mediaSession.setActionHandler("seekbackward", null);
         navigator.mediaSession.setActionHandler("seekforward", null);
-        navigator.mediaSession.setActionHandler("seekto", null);
       } catch {}
     };
   }, [plan, handlers]);
