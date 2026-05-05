@@ -75,7 +75,8 @@ export function Scrubber({
       {/* Track — enlarged touch area */}
       <div
         ref={trackRef}
-        className="relative cursor-pointer py-2"
+        className="relative cursor-pointer py-3"
+        style={{ touchAction: "none" }}
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}

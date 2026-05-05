@@ -20,7 +20,6 @@ export function useBoundaryDetector(
 
     let raf: number;
     let fallbackTimeout: ReturnType<typeof setTimeout>;
-    let seekConfirmed = false;
 
     const fire = () => {
       if (firedRef.current || gen !== generationRef.current) return;
@@ -29,44 +28,46 @@ export function useBoundaryDetector(
       onBoundary();
     };
 
+    const checkBoundary = () => {
+      if (firedRef.current || gen !== generationRef.current) return;
+      const ct = audio.currentTime;
+      // Only fire if we're genuinely in this chunk's territory AND past end
+      if (ct >= startTime && ct >= endTime) {
+        fire();
+      }
+    };
+
+    // Use timeupdate (iOS fires this reliably ~4Hz) + rAF (desktop precision)
+    const onTimeUpdate = () => checkBoundary();
+    audio.addEventListener("timeupdate", onTimeUpdate);
+
     const tick = () => {
       if (firedRef.current || gen !== generationRef.current) return;
-
-      const ct = audio.currentTime;
-
-      if (!seekConfirmed) {
-        // Wait until audio has seeked into our chunk range
-        if (ct >= startTime - 1 && ct <= endTime + 1) {
-          seekConfirmed = true;
-          // Now set the fallback timeout based on actual position
-          const rate = audio.playbackRate || 1;
-          const remaining = Math.max(0, ((endTime - ct) / rate) * 1000);
-          fallbackTimeout = setTimeout(() => {
-            if (firedRef.current || gen !== generationRef.current) return;
-            // Double-check position — only fire if genuinely at the end
-            if (audio.currentTime >= endTime - 0.3 && seekConfirmed) {
-              fire();
-            }
-          }, remaining + 300);
-        }
-        raf = requestAnimationFrame(tick);
-        return;
-      }
-
-      // Seek confirmed — check for boundary
-      // Use >= endTime (no early tolerance) to avoid cutting short on iOS
-      if (!audio.paused && ct >= endTime) {
-        fire();
-        return;
-      }
-
+      checkBoundary();
       raf = requestAnimationFrame(tick);
     };
 
-    raf = requestAnimationFrame(tick);
+    // Delay start — let playFrom() seek first
+    const startDelay = setTimeout(() => {
+      if (gen !== generationRef.current) return;
+      raf = requestAnimationFrame(tick);
+
+      // Fallback timeout for background tabs
+      const rate = audio.playbackRate || 1;
+      const remaining = Math.max(0, ((endTime - audio.currentTime) / rate) * 1000);
+      fallbackTimeout = setTimeout(() => {
+        if (firedRef.current || gen !== generationRef.current) return;
+        const ct = audio.currentTime;
+        if (ct >= startTime && ct >= endTime - 0.5) {
+          fire();
+        }
+      }, remaining + 500);
+    }, 150);
 
     return () => {
+      audio.removeEventListener("timeupdate", onTimeUpdate);
       cancelAnimationFrame(raf);
+      clearTimeout(startDelay);
       clearTimeout(fallbackTimeout);
     };
   }, [audio, endTime, startTime, onBoundary]);
