@@ -191,8 +191,8 @@ export function useCascadeSequencer(): CascadeControls {
   }, []);
 
   const resumeCascade = useCallback((): boolean => {
+    if (!runningRef.current) return false;
     pausedRef.current = false;
-    // Return whether audio was playing when paused (caller should resume it)
     return isPlayingAudioRef.current;
   }, []);
 

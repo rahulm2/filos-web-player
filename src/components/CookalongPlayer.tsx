@@ -64,9 +64,9 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
   useMediaSession(plan, {
     onPlay: () => {
-      if (cascade.state.isRunning) {
-        const wasPlaying = cascade.resumeCascade();
-        if (wasPlaying) engine.resume();
+      const cascadeWasPlaying = cascade.resumeCascade();
+      if (cascadeWasPlaying) {
+        engine.resume();
       } else {
         engine.resume();
         isResuming.current = true;
@@ -172,14 +172,11 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
   const handleResume = useCallback(() => {
     const prevState = pacing.previousState;
-    if (cascade.state.isRunning) {
-      // Resuming into a cascade — check if audio was playing
-      const wasPlayingAudio = cascade.resumeCascade();
-      if (wasPlayingAudio) {
-        engine.resume();
-      }
+    // Always try cascade resume — returns true if audio was mid-playback
+    const cascadeWasPlaying = cascade.resumeCascade();
+    if (cascadeWasPlaying) {
+      engine.resume();
     } else if (prevState === "PLAYING" || prevState === "SEAM") {
-      // Resuming core playback
       isResuming.current = true;
     }
     pacing.dispatch({ type: "RESUME" });
