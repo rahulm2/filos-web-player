@@ -23,7 +23,7 @@ export function CompleteScreen({ plan }: { plan: PlaybackPlan }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F0EB]">
+    <div className="min-h-[100dvh] bg-[#F5F0EB]">
       <div className="mx-auto max-w-[480px] px-5 py-8">
         {/* Progress bar — all filled */}
         <ProgressBar phases={plan.phases} currentPhaseIndex={plan.phases.length} />
@@ -53,7 +53,7 @@ export function CompleteScreen({ plan }: { plan: PlaybackPlan }) {
                 <button
                   key={opt}
                   onClick={() => handleSurvey("cook_again", opt)}
-                  className={`rounded-lg border px-3 py-2 text-[13px] transition-colors ${
+                  className={`cursor-pointer rounded-lg border px-3 py-2 text-[13px] transition-colors hover:bg-[#EDE6DD] active:scale-[0.97] ${
                     answers.cook_again === opt
                       ? "border-[#C9944A] text-[#C9944A]"
                       : "border-[#DDD5CB] text-[#2A231D]"
@@ -73,7 +73,7 @@ export function CompleteScreen({ plan }: { plan: PlaybackPlan }) {
                 <button
                   key={opt}
                   onClick={() => handleSurvey("finished", opt)}
-                  className={`rounded-lg border px-3 py-2 text-[13px] transition-colors ${
+                  className={`cursor-pointer rounded-lg border px-3 py-2 text-[13px] transition-colors hover:bg-[#EDE6DD] active:scale-[0.97] ${
                     answers.finished === opt
                       ? "border-[#C9944A] text-[#C9944A]"
                       : "border-[#DDD5CB] text-[#2A231D]"
@@ -121,7 +121,7 @@ export function CompleteScreen({ plan }: { plan: PlaybackPlan }) {
             />
             <button
               onClick={handleEmailSubmit}
-              className="rounded-lg bg-[#2A231D] px-4 py-2 text-[13px] font-medium text-[#F5F0EB]"
+              className="cursor-pointer rounded-lg bg-[#2A231D] px-4 py-2 text-[13px] font-medium text-[#F5F0EB] transition-colors hover:bg-[#3D342C] active:scale-[0.97]"
             >
               Submit
             </button>

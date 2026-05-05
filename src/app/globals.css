@@ -4,3 +4,13 @@
   0% { transform: scaleY(0.4); }
   100% { transform: scaleY(1); }
 }
+
+/* Use dvh (dynamic viewport height) to account for mobile browser chrome */
+html, body {
+  min-height: 100dvh;
+}
+
+/* Utility for screens that need full dynamic viewport */
+.min-h-screen-safe {
+  min-height: 100dvh;
+}

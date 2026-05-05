@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -14,6 +14,13 @@ const jakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#2A231D",
+};
+
 export const metadata: Metadata = {
   title: "Cook Tomato Risotto with Clare",
   description:
@@ -24,6 +31,12 @@ export const metadata: Metadata = {
       "A 50-minute guided cookalong. Tap to start, cook hands-free.",
     images: [{ url: "/images/tomato-risotto.jpg", width: 1200, height: 630 }],
     type: "website",
+  },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: false, // intentionally false — PWA standalone breaks iOS background audio
+    title: "Cook with Clare",
+    statusBarStyle: "black-translucent",
   },
 };
 

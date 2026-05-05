@@ -158,8 +158,8 @@ export function PreCookScreen({
         </div>
       </div>
 
-      {/* Fixed CTA at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#EDE6DD] bg-[#F5F0EB] px-5 py-4">
+      {/* Fixed CTA at bottom — pb-[env(safe-area-inset-bottom)] for iPhone notch */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#EDE6DD] bg-[#F5F0EB] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
         <div className="mx-auto max-w-[480px]">
           <button
             onClick={() => { track("cta_tapped", { recipe_title: plan.recipe.title, creator: plan.recipe.creator }); setShowConfirm(true); }}

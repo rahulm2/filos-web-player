@@ -35,7 +35,7 @@ export function GateScreen({
   onNavigate: (phaseIndex: number, stepIndex: number) => void;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#2A231D] px-5 py-6">
+    <div className="flex min-h-[100dvh] flex-col bg-[#2A231D] px-5 py-6">
       {/* Top bar */}
       <div>
         <ProgressBar
