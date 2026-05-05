@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { PlaybackPlan } from "@/lib/types";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { ProgressBar } from "./ProgressBar";
@@ -66,7 +67,14 @@ export function CompleteScreen({ plan, onRestart }: { plan: PlaybackPlan; onRest
 
         {/* Header */}
         <div className="mt-8 text-center">
-          <div className="mx-auto h-14 w-14 rounded-full bg-[#EDE6DD]" />
+          <div className="relative mx-auto h-14 w-14 overflow-hidden rounded-full">
+            <Image
+              src={plan.recipe.creator_photo_url}
+              alt={plan.recipe.creator}
+              fill
+              className="object-cover"
+            />
+          </div>
           <h1 className="mt-4 font-[family-name:var(--font-fraunces)] text-[22px] text-[#2A231D]">
             Bon app&eacute;tit!
           </h1>
