@@ -145,7 +145,7 @@ export function StepNavigator({
           >
             Steps
             {activeTab === "steps" && (
-              <span className="text-[10px] leading-none opacity-50">&times;</span>
+              <span className="inline-flex items-center text-[10px] leading-none opacity-50">&times;</span>
             )}
           </button>
           <button
@@ -158,7 +158,7 @@ export function StepNavigator({
           >
             Ingredients
             {activeTab === "ingredients" && (
-              <span className="text-[10px] leading-none opacity-50">&times;</span>
+              <span className="inline-flex items-center text-[10px] leading-none opacity-50">&times;</span>
             )}
           </button>
         </div>
