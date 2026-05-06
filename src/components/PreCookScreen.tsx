@@ -42,7 +42,7 @@ export function PreCookScreen({
 
         {/* Creator photo + header + share */}
         <div className="mt-4 flex items-center gap-3">
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
+          <div className="relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-full">
             <Image
               src={plan.recipe.creator_photo_url}
               alt={plan.recipe.creator}
@@ -83,35 +83,10 @@ export function PreCookScreen({
           </span>
         </div>
 
-        {/* Phase progress */}
-        <div className="mt-6">
-          <ProgressBar phases={plan.phases} currentPhaseIndex={0} stepsInPhase={0} />
-        </div>
-
-        {/* Recipe steps overview */}
-        <div className="mt-6">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[1.5px] text-[#887B6C]">
-            What you&apos;ll do
-          </h3>
-          <div className="mt-3 space-y-0">
-            {plan.phases.map((phase) => (
-              <div key={phase.phase_number} className="mb-3">
-                <p className="text-[12px] font-semibold text-[#C9944A]">{phase.phase_name}</p>
-                <ol className="mt-1 space-y-1">
-                  {phase.steps.map((step, i) => (
-                    <li key={step.step_id} className="flex items-start gap-2 text-[13px] text-[#5C5347]">
-                      <span className="mt-0.5 text-[10px] text-[#887B6C]">{i + 1}.</span>
-                      <span>{step.step_label}</span>
-                      {step.pacing === "gated" && (
-                        <span className="ml-auto shrink-0 text-[10px] text-[#887B6C]">tap</span>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Headnote */}
+        <p className="mt-3 text-[14px] leading-relaxed text-[#5C5347]">
+          This risotto is gentle, mellow and understated (re: not a flavor bomb) making it the perfect canvas. Think of it like pasta with marinara sauce. The pairings, toppings and garnishes are endless. I recently served it with seared scallops, yellow squash and corn for accidentally all-yellow dinner. I also love it with a swirl of pesto and a dollop of ricotta.
+        </p>
 
         {/* Ingredients */}
         <div className="mt-6">
@@ -151,9 +126,38 @@ export function PreCookScreen({
           <h3 className="text-[11px] font-semibold uppercase tracking-[1.5px] text-[#887B6C]">
             Gear
           </h3>
-          <p className="mt-2 text-[13px] text-[#5C5347]">
-            {plan.equipment.join(" \u00B7 ")}
-          </p>
+          <div className="mt-3 space-y-0">
+            {plan.equipment.map((item, i) => (
+              <div
+                key={i}
+                className="border-b border-[#DDD5CB]/50 py-2.5"
+              >
+                <span className="text-[14px] text-[#2A231D]">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recipe steps overview */}
+        <div className="mt-6">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[1.5px] text-[#887B6C]">
+            What you&apos;ll do
+          </h3>
+          <div className="mt-3 space-y-0">
+            {plan.phases.map((phase) => (
+              <div key={phase.phase_number} className="mb-3">
+                <p className="text-[12px] font-semibold text-[#C9944A]">{phase.phase_name}</p>
+                <ol className="mt-1 space-y-1">
+                  {phase.steps.map((step, i) => (
+                    <li key={step.step_id} className="flex items-start gap-2 text-[13px] text-[#5C5347]">
+                      <span className="mt-0.5 text-[10px] text-[#887B6C]">{i + 1}.</span>
+                      <span>{step.step_label}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -164,7 +168,7 @@ export function PreCookScreen({
             onClick={() => { track("cta_tapped", { recipe_title: plan.recipe.title, creator: plan.recipe.creator }); setShowConfirm(true); }}
             className="w-full cursor-pointer rounded-[10px] bg-[#2A231D] px-6 py-[14px] text-[15px] font-medium text-[#F5F0EB] transition-all hover:bg-[#3D342C] active:scale-[0.98]"
           >
-            Start cooking with {plan.recipe.creator.split(" ")[0]}
+            Cook with {plan.recipe.creator.split(" ")[0]}
           </button>
         </div>
       </div>

@@ -32,6 +32,7 @@ export function CookScreen({
   onSeek,
   onSpeedChange,
   currentSpeed,
+  onExit,
   onEnd,
 }: {
   plan: PlaybackPlan;
@@ -50,6 +51,7 @@ export function CookScreen({
   onSeek: (progress: number) => void;
   onSpeedChange?: (speed: number) => void;
   currentSpeed: number;
+  onExit: () => void;
   onEnd?: () => void;
 }) {
   return (
@@ -64,11 +66,19 @@ export function CookScreen({
         />
       </div>
 
-      {/* Phase label + actions */}
+      {/* Share + phase label + exit */}
       <div className="mt-3 flex items-center justify-between">
+        <ShareButton variant="dark" />
         <p className="text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
           {currentPhase.phase_name}
         </p>
+        <button
+          onClick={onExit}
+          className="text-[26px] leading-none text-[#887B6C] hover:text-[#F5F0EB] transition-colors cursor-pointer"
+          aria-label="Exit cook"
+        >
+          &times;
+        </button>
         <div className="flex items-center gap-3">
           {onEnd && (
             <button
@@ -85,7 +95,7 @@ export function CookScreen({
       {/* Center content */}
       <div className="flex flex-1 flex-col items-center justify-center">
         {/* Creator photo */}
-        <div className="relative h-16 w-16 overflow-hidden rounded-full">
+        <div className="relative h-28 w-28 overflow-hidden rounded-full">
           <Image
             src={plan.recipe.creator_photo_url}
             alt={plan.recipe.creator}

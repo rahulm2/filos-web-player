@@ -25,6 +25,7 @@ export function GateScreen({
   currentSpeed,
   isPaused = false,
   onResume,
+  onExit,
   onEnd,
   onBack,
   onRepeat,
@@ -45,6 +46,7 @@ export function GateScreen({
   currentSpeed: number;
   isPaused?: boolean;
   onResume?: () => void;
+  onExit: () => void;
   onEnd?: () => void;
   onBack?: () => void;
   onRepeat?: () => void;
@@ -61,11 +63,20 @@ export function GateScreen({
         />
       </div>
 
+      {/* Share + phase label + exit */}
       {/* Phase label + actions */}
       <div className="mt-3 flex items-center justify-between">
+        <ShareButton variant="dark" />
         <p className="text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
           {currentPhase.phase_name}
         </p>
+        <button
+          onClick={onExit}
+          className="text-[26px] leading-none text-[#887B6C] hover:text-[#F5F0EB] transition-colors cursor-pointer"
+          aria-label="Exit cook"
+        >
+          &times;
+        </button>
         <div className="flex items-center gap-3">
           {onEnd && (
             <button
@@ -82,7 +93,7 @@ export function GateScreen({
       {/* Center content */}
       <div className="flex flex-1 flex-col items-center justify-center">
         {/* Creator photo with honey border */}
-        <div className="relative h-16 w-16 overflow-hidden rounded-full border-[2px] border-[#C9944A]">
+        <div className="relative h-28 w-28 overflow-hidden rounded-full border-[2px] border-[#C9944A]">
           <Image
             src={plan.recipe.creator_photo_url}
             alt={plan.recipe.creator}

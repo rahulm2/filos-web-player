@@ -337,6 +337,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onSeek={handleSeek}
           onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
+          onExit={handleRestart}
           onEnd={handleEndSession}
         />
       );
@@ -367,6 +368,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
             currentSpeed={playbackSpeed}
             isPaused={true}
             onResume={handleResume}
+            onExit={handleRestart}
             onEnd={handleEndSession}
             onBack={handleBack}
             onRepeat={handleRepeat}
@@ -391,6 +393,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onSeek={handleSeek}
           onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
+          onExit={handleRestart}
           onEnd={handleEndSession}
         />
       );
@@ -418,6 +421,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onNavigate={handleNavigate}
           onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
+          onExit={handleRestart}
           onEnd={handleEndSession}
           onBack={handleBack}
           onRepeat={handleRepeat}
