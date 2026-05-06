@@ -52,6 +52,7 @@ export function CookScreen({
   onSpeedChange?: (speed: number) => void;
   currentSpeed: number;
   onExit: () => void;
+  onEnd?: () => void;
 }) {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#2A231D] px-5 py-6">
