@@ -188,30 +188,14 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     pacing.dispatch({ type: "RESUME" });
   }, [cascade, pacing, engine]);
 
-  const restartCascade = useCallback(async () => {
-    await cascade.interrupt();
-    engine.pause();
-    const gate = currentStep?.gate;
-    if (gate) {
-      cascade.start(
-        gate.cascade,
-        (start, end) => engine.playFrom(start, end),
-        () => engine.fadeOut(),
-        () => engine.pause(),
-        () => engine.getCurrentTime()
-      );
-    }
-  }, [cascade, engine, currentStep]);
-
   const handleBack = useCallback(async () => {
     const effective = pacing.state === "PAUSED" ? pacing.previousState : pacing.state;
     if (effective === "WAITING" || effective === "PHASE_GATE") {
-      track("step_back", { from_phase: pacing.phaseIndex, from_step: currentStep?.step_id, action: "restart_cascade" });
-      // If paused, restore to the gate state first
+      track("step_back", { from_phase: pacing.phaseIndex, from_step: currentStep?.step_id, action: "replay_cascade" });
       if (pacing.state === "PAUSED") {
         pacing.dispatch({ type: "RESUME" });
       }
-      await restartCascade();
+      await cascade.replay();
       return;
     }
     engine.pause();
@@ -221,16 +205,16 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
       from_step: currentStep?.step_id,
     });
     pacing.dispatch({ type: "GO_BACK" });
-  }, [engine, cascade, pacing, track, currentStep, restartCascade]);
+  }, [engine, cascade, pacing, track, currentStep]);
 
   const handleRepeat = useCallback(async () => {
     const effective = pacing.state === "PAUSED" ? pacing.previousState : pacing.state;
     if (effective === "WAITING" || effective === "PHASE_GATE") {
-      track("step_repeat", { step_id: currentStep?.step_id, action: "restart_cascade" });
+      track("step_repeat", { step_id: currentStep?.step_id, action: "replay_cascade" });
       if (pacing.state === "PAUSED") {
         pacing.dispatch({ type: "RESUME" });
       }
-      await restartCascade();
+      await cascade.replay();
       return;
     }
     // Seek to start of current step's first chunk and play
@@ -241,7 +225,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     }
     track("step_repeat", { step_id: currentStep?.step_id });
     pacing.dispatch({ type: "REPEAT" });
-  }, [engine, pacing, plan, track, currentStep, cascade, restartCascade]);
+  }, [engine, pacing, plan, track, currentStep, cascade]);
 
   const handleNavigate = useCallback(async (phaseIndex: number, stepIndex: number) => {
     engine.pause();

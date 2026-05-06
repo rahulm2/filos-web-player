@@ -21,6 +21,7 @@ interface CascadeControls {
     getAudioTime: () => number
   ) => void;
   interrupt: () => Promise<void>;
+  replay: () => Promise<void>;
   pauseCascade: () => void;
   resumeCascade: () => boolean;
   isRunning: () => boolean;
@@ -41,6 +42,14 @@ export function useCascadeSequencer(): CascadeControls {
   const isPlayingAudioRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const runningRef = useRef(false);
+  const currentEntryIdxRef = useRef(0);
+  const argsRef = useRef<{
+    cascade: CascadeEntry[];
+    playAudio: (start: number, end: number) => void;
+    fadeOut: () => Promise<void>;
+    pauseAudio: () => void;
+    getAudioTime: () => number;
+  } | null>(null);
 
   const clearPendingTimeout = useCallback(() => {
     if (timeoutRef.current) {
@@ -97,12 +106,16 @@ export function useCascadeSequencer(): CascadeControls {
       currentFadeOut.current = fadeOut;
       currentPauseAudio.current = pauseAudio;
       isPlayingAudioRef.current = false;
+      currentEntryIdxRef.current = 0;
+      argsRef.current = { cascade, playAudio, fadeOut, pauseAudio, getAudioTime };
 
       setState({ isRunning: true, statusText: "Take your time...", phase: "silence", isPlayingAudio: false });
 
       const run = async () => {
-        for (const entry of cascade) {
+        for (let i = 0; i < cascade.length; i++) {
           if (abortRef.current) break;
+          currentEntryIdxRef.current = i;
+          const entry = cascade[i];
 
           switch (entry.type) {
             case "silence":
@@ -184,6 +197,30 @@ export function useCascadeSequencer(): CascadeControls {
     setState({ isRunning: false, statusText: "", phase: "inactive", isPlayingAudio: false });
   }, [clearPendingTimeout]);
 
+  // Restart the cascade from the current audio entry (heartbeat/elastic).
+  // If the current entry is silence, restarts from the next audio entry instead.
+  const replay = useCallback(async () => {
+    const args = argsRef.current;
+    if (!args) return;
+
+    // Find the entry to replay: current one if it has audio, otherwise scan forward
+    let replayIdx = currentEntryIdxRef.current;
+    const cur = args.cascade[replayIdx];
+    if (cur?.type === "silence") {
+      // Skip to the next non-silence entry
+      for (let i = replayIdx + 1; i < args.cascade.length; i++) {
+        if (args.cascade[i].type !== "silence") { replayIdx = i; break; }
+      }
+    }
+
+    // Interrupt current, then restart from replayIdx
+    await interrupt();
+    const sliced = args.cascade.slice(replayIdx);
+    if (sliced.length > 0) {
+      start(sliced, args.playAudio, args.fadeOut, args.pauseAudio, args.getAudioTime);
+    }
+  }, [interrupt, start]);
+
   const pauseCascade = useCallback(() => {
     pausedRef.current = true;
     if (isPlayingAudioRef.current && currentPauseAudio.current) {
@@ -199,5 +236,5 @@ export function useCascadeSequencer(): CascadeControls {
 
   const isRunning = useCallback(() => runningRef.current, []);
 
-  return { state, start, interrupt, pauseCascade, resumeCascade, isRunning };
+  return { state, start, interrupt, replay, pauseCascade, resumeCascade, isRunning };
 }
