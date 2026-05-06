@@ -71,26 +71,28 @@ function createReducer(plan: PlaybackPlan) {
         return { ...s, state: "PLAYING" };
 
       case "ADVANCE": {
+        // When paused, advance using the state that was active before pause
+        const effectiveState = s.state === "PAUSED" ? (s.previousState ?? "PLAYING") : s.state;
         // From WAITING → next step
-        if (s.state === "WAITING") {
+        if (effectiveState === "WAITING") {
           const nextStepIdx = s.stepIndex + 1;
-          return { ...s, state: "PLAYING", stepIndex: nextStepIdx, chunkIndex: 0 };
+          return { ...s, state: "PLAYING", previousState: null, stepIndex: nextStepIdx, chunkIndex: 0 };
         }
         // From PHASE_GATE → first step of next phase
-        if (s.state === "PHASE_GATE") {
+        if (effectiveState === "PHASE_GATE") {
           const nextPhaseIdx = s.phaseIndex + 1;
-          return { ...s, state: "PLAYING", phaseIndex: nextPhaseIdx, stepIndex: 0, chunkIndex: 0 };
+          return { ...s, state: "PLAYING", previousState: null, phaseIndex: nextPhaseIdx, stepIndex: 0, chunkIndex: 0 };
         }
         // From PLAYING → skip to next gate/step
-        if (s.state === "PLAYING") {
+        if (effectiveState === "PLAYING") {
           const phase = plan.phases[s.phaseIndex];
           const nextStepIdx = s.stepIndex + 1;
           if (nextStepIdx < phase.steps.length) {
-            return { ...s, state: "PLAYING", stepIndex: nextStepIdx, chunkIndex: 0 };
+            return { ...s, state: "PLAYING", previousState: null, stepIndex: nextStepIdx, chunkIndex: 0 };
           }
           const nextPhaseIdx = s.phaseIndex + 1;
           if (nextPhaseIdx < plan.phases.length) {
-            return { ...s, state: "PLAYING", phaseIndex: nextPhaseIdx, stepIndex: 0, chunkIndex: 0 };
+            return { ...s, state: "PLAYING", previousState: null, phaseIndex: nextPhaseIdx, stepIndex: 0, chunkIndex: 0 };
           }
           return { ...s, state: "COMPLETE" };
         }

@@ -60,6 +60,12 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
       engine.pause();
       track("step_skip", { step_id: currentStep?.step_id, phase_index: pacing.phaseIndex });
       pacing.dispatch({ type: "ADVANCE" });
+    } else if (pacing.state === "PAUSED") {
+      const prevState = pacing.previousState;
+      if (prevState === "WAITING" || prevState === "PHASE_GATE") {
+        await cascade.interrupt();
+      }
+      pacing.dispatch({ type: "ADVANCE" });
     }
   }, [pacing, cascade, engine, currentStep, track]);
 
@@ -152,6 +158,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
     if (pacing.state === "COMPLETE") {
       engine.pause();
+      cascade.interrupt();
       track("session_complete", { recipe_title: plan.recipe.title, creator: plan.recipe.creator });
     }
 
@@ -284,13 +291,14 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
   const handleRestart = useCallback(() => {
     engine.pause();
+    cascade.interrupt();
     setShowAbandon(false);
     pacing.dispatch({ type: "RESTART" });
-  }, [engine, pacing]);
+  }, [engine, cascade, pacing]);
 
   const handleEndSession = useCallback(() => {
     engine.pause();
-    if (cascade.state.isRunning) cascade.pauseCascade();
+    if (cascade.isRunning()) cascade.pauseCascade();
     pacing.dispatch({ type: "PAUSE" });
     setShowAbandon(true);
   }, [engine, cascade, pacing]);
