@@ -86,7 +86,7 @@
             },
             {
               "chunk_id": "bring-to-simmer",
-              "start_time": 590.5,
+              "start_time": 592.5,
               "end_time": 617.5,
               "transcript_preview": "Six cups broth in your sauce pan and let's bring it to a simmer."
             }
@@ -124,20 +124,8 @@
             {
               "chunk_id": "measure-rest",
               "start_time": 670,
-              "end_time": 810,
-              "transcript_preview": "Cherry tomatoes, give them a rinse... tomato paste... one cup of arborio rice..."
-            },
-            {
-              "chunk_id": "parm-grating",
-              "start_time": 810,
-              "end_time": 832.5,
-              "transcript_preview": "A cup of finely grated parm. Freshly grated parm is like snow versus hail..."
-            },
-            {
-              "chunk_id": "basil-prep",
-              "start_time": 832.5,
-              "end_time": 861.4,
-              "transcript_preview": "Don't chop basil \u2014 pull leaves off stems and hand-tear."
+              "end_time": 879,
+              "transcript_preview": "Cherry tomatoes, give them a rinse... tomato paste... arborio rice... parm... basil."
             }
           ],
           "gate": {
@@ -165,14 +153,8 @@
           "pacing": "gated",
           "core_chunks": [
             {
-              "chunk_id": "check-broth",
-              "start_time": 861.4,
-              "end_time": 875,
-              "transcript_preview": "Check on that broth. If it's come to a boil, reduce it to a simmer."
-            },
-            {
               "chunk_id": "mince-shallots-instruction",
-              "start_time": 880,
+              "start_time": 879,
               "end_time": 895.9,
               "transcript_preview": "Back to those shallots. We're going to mince them."
             }
@@ -219,7 +201,7 @@
             {
               "chunk_id": "how-to-tell-heated",
               "start_time": 959.7,
-              "end_time": 1005,
+              "end_time": 1010,
               "transcript_preview": "Butter melted, bubbly, hear that sizzle. Put a piece of shallot in \u2014 should sizzle, not pop."
             }
           ],
@@ -249,8 +231,8 @@
           "core_chunks": [
             {
               "chunk_id": "add-shallots",
-              "start_time": 1005,
-              "end_time": 1055,
+              "start_time": 1010,
+              "end_time": 1050.5,
               "transcript_preview": "Add all the shallots. Stir frequently but not continuously. About five minutes."
             }
           ],
@@ -281,20 +263,8 @@
             {
               "chunk_id": "shallots-done-check",
               "start_time": 1055,
-              "end_time": 1095,
-              "transcript_preview": "What are we looking for? Translucent, smell amazing, no browning."
-            },
-            {
-              "chunk_id": "add-tomato-paste",
-              "start_time": 1095,
-              "end_time": 1140,
-              "transcript_preview": "Add in our tomato paste, two teaspoons. Stir constantly."
-            },
-            {
-              "chunk_id": "tomato-paste-done",
-              "start_time": 1140,
-              "end_time": 1185,
-              "transcript_preview": "Not burned. Cup of water nearby for emergencies. About one minute."
+              "end_time": 1181,
+              "transcript_preview": "What are we looking for? Translucent, smell amazing... add tomato paste, stir constantly."
             }
           ],
           "gate": {
@@ -324,8 +294,13 @@
             {
               "chunk_id": "add-tomatoes",
               "start_time": 1212.3,
-              "end_time": 1270,
+              "end_time": 1248,
               "transcript_preview": "Time to add those tomatoes. They're gonna burst. Stir every 30 seconds."
+            },
+            {
+              "chunk_id": "tomatoes-bursting",
+              "start_time": 1252,
+              "end_time": 1353
             }
           ],
           "gate": {
@@ -353,22 +328,10 @@
           "pacing": "auto",
           "core_chunks": [
             {
-              "chunk_id": "tomatoes-ready",
-              "start_time": 1270,
-              "end_time": 1310,
-              "transcript_preview": "Break them up with wooden spoon or potato masher."
-            },
-            {
               "chunk_id": "add-rice",
-              "start_time": 1355,
-              "end_time": 1410,
+              "start_time": 1354,
+              "end_time": 1389,
               "transcript_preview": "Add all your rice and give it a good stir. Coat it in the tomato liquid."
-            },
-            {
-              "chunk_id": "first-ladle",
-              "start_time": 1410,
-              "end_time": 1490,
-              "transcript_preview": "Start adding broth. Ladle at a time. Stirring makes it thick and creamy."
             }
           ]
         }
@@ -384,22 +347,16 @@
           "pacing": "gated",
           "core_chunks": [
             {
+              "chunk_id": "first-ladle",
+              "start_time": 1389,
+              "end_time": 1490,
+              "transcript_preview": "Start adding broth. Ladle at a time. Stirring makes it thick and creamy."
+            },
+            {
               "chunk_id": "stirring-technique",
               "start_time": 1490,
-              "end_time": 1515,
-              "transcript_preview": "Adding broth ladle by ladle. Stirring pulls out the starch."
-            },
-            {
-              "chunk_id": "when-to-add-next",
-              "start_time": 1567.3,
-              "end_time": 1650,
-              "transcript_preview": "Drag your spoon \u2014 parting the Red Sea. Should see the bottom of the pan."
-            },
-            {
-              "chunk_id": "walking-away",
-              "start_time": 1650,
               "end_time": 1685,
-              "transcript_preview": "Can turn heat to low and walk away briefly."
+              "transcript_preview": "Adding broth ladle by ladle. Stirring pulls out the starch... drag your spoon, parting the Red Sea."
             },
             {
               "chunk_id": "halfway-check",
@@ -410,7 +367,7 @@
             {
               "chunk_id": "al-dente-explanation",
               "start_time": 1855,
-              "end_time": 1925,
+              "end_time": 2363,
               "transcript_preview": "Al dente \u2014 to the teeth, not sticking to teeth. Little bite, not mush."
             }
           ],
@@ -418,86 +375,6 @@
             "cascade": [
               { "type": "silence", "duration_seconds": 15 },
               { "type": "heartbeat", "fallback_message": "Stir, sip, stir..." },
-              { "type": "silence", "duration_seconds": 20 },
-              {
-                "type": "elastic",
-                "chunk": {
-                  "chunk_id": "arborio-explanation",
-                  "start_time": 1515,
-                  "end_time": 1567.3,
-                  "relevance_label": "Can you substitute the rice? No \u2014 you won't have risotto"
-                }
-              },
-              { "type": "silence", "duration_seconds": 25 },
-              {
-                "type": "elastic",
-                "chunk": {
-                  "chunk_id": "podcast-rec",
-                  "start_time": 1685,
-                  "end_time": 1735,
-                  "relevance_label": "Clare's podcast pick \u2014 Amy Poehler's Good Hang"
-                }
-              },
-              { "type": "silence", "duration_seconds": 20 },
-              {
-                "type": "elastic",
-                "chunk": {
-                  "chunk_id": "risotto-meditative",
-                  "start_time": 1735,
-                  "end_time": 1770,
-                  "relevance_label": "Risotto is meditative \u2014 crafting something"
-                }
-              },
-              { "type": "silence", "duration_seconds": 20 },
-              {
-                "type": "elastic",
-                "chunk": {
-                  "chunk_id": "seasonal-risottos",
-                  "start_time": 1770,
-                  "end_time": 1815,
-                  "relevance_label": "Seasonal risottos \u2014 tomato summer, butternut fall, pea spring"
-                }
-              },
-              { "type": "silence", "duration_seconds": 25 },
-              {
-                "type": "elastic",
-                "chunk": {
-                  "chunk_id": "stock-good-better-best",
-                  "start_time": 1925,
-                  "end_time": 1980,
-                  "relevance_label": "Good/better/best stock framework"
-                }
-              },
-              { "type": "silence", "duration_seconds": 20 },
-              {
-                "type": "elastic",
-                "chunk": {
-                  "chunk_id": "better-than-bouillon",
-                  "start_time": 1980,
-                  "end_time": 2095,
-                  "relevance_label": "Better Than Bouillon \u2014 concentrated paste, lives in your fridge"
-                }
-              },
-              { "type": "silence", "duration_seconds": 25 },
-              {
-                "type": "elastic",
-                "chunk": {
-                  "chunk_id": "homemade-stock-pt1",
-                  "start_time": 2095,
-                  "end_time": 2210,
-                  "relevance_label": "Homemade stock \u2014 rotisserie chicken gateway"
-                }
-              },
-              { "type": "silence", "duration_seconds": 20 },
-              {
-                "type": "elastic",
-                "chunk": {
-                  "chunk_id": "homemade-stock-pt2",
-                  "start_time": 2210,
-                  "end_time": 2348.7,
-                  "relevance_label": "Freezer bag scraps, instant pot, freezing in quarts"
-                }
-              },
               { "type": "silence", "duration_seconds": 30 },
               { "type": "heartbeat", "fallback_message": "Keep stirring \u2014 you're doing great..." }
             ]
@@ -523,7 +400,7 @@
             {
               "chunk_id": "consistency-check",
               "start_time": 2475,
-              "end_time": 2510,
+              "end_time": 2512,
               "transcript_preview": "Eat with a spoon. If too thin, keep cooking."
             }
           ],
@@ -544,11 +421,11 @@
         {
           "step_id": "phase-3-step-0",
           "step_label": "Season and finish",
-          "pacing": "gated",
+          "pacing": "auto",
           "core_chunks": [
             {
               "chunk_id": "add-salt",
-              "start_time": 2510,
+              "start_time": 2512,
               "end_time": 2550,
               "transcript_preview": "Time to add salt. Big three fingered pinch. Taste it."
             },
@@ -593,7 +470,7 @@
         {
           "step_id": "phase-3-step-1",
           "step_label": "Plate and garnish",
-          "pacing": "gated",
+          "pacing": "auto",
           "core_chunks": [
             {
               "chunk_id": "plating-instruction",
