@@ -16,6 +16,7 @@ import { CookScreen } from "./CookScreen";
 import { GateScreen } from "./GateScreen";
 import { CompleteScreen } from "./CompleteScreen";
 import { AbandonFeedbackScreen } from "./AbandonFeedbackScreen";
+import { OnboardingInterstitial } from "./OnboardingInterstitial";
 
 export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const engine = useAudioEngine(plan.recipe.audio_url);
@@ -27,6 +28,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isInitializing, setIsInitializing] = useState(false);
   const [showAbandon, setShowAbandon] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   // iOS uses WebKit for all browsers — playbackRate glitches through MediaElementSourceNode
   const isIOSRef = useRef(false);
   if (typeof navigator !== "undefined" && !isIOSRef.current) {
@@ -174,9 +176,14 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     setIsInitializing(true);
     track("session_start", {});
     await engine.init();
-    pacing.dispatch({ type: "START" });
     setIsInitializing(false);
-  }, [engine, pacing, track]);
+    setShowOnboarding(true);
+  }, [engine, track]);
+
+  const handleOnboardingComplete = useCallback(() => {
+    setShowOnboarding(false);
+    pacing.dispatch({ type: "START" });
+  }, [pacing]);
 
   const handlePause = useCallback(() => {
     engine.pause();
@@ -310,6 +317,10 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   }, [handleResume]);
 
   // Render based on state
+  if (showOnboarding) {
+    return <OnboardingInterstitial plan={plan} onComplete={handleOnboardingComplete} />;
+  }
+
   if (showAbandon) {
     return (
       <AbandonFeedbackScreen
