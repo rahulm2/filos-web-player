@@ -90,7 +90,8 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     onNext: () => handleNext(),
     onPrevious: () => pacing.dispatch({ type: "GO_BACK" }),
     onSeek: (p: number) => seekRef.current?.(p),
-  }, coreProgress.totalCoreDuration, coreProgress.elapsedCoreDuration);
+  }, coreProgress.totalCoreDuration, coreProgress.elapsedCoreDuration,
+  !showAbandon && pacing.state !== "COMPLETE" && pacing.state !== "LOADING");
 
   // Abandon tracking
   useAbandonTracking(

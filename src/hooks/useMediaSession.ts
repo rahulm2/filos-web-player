@@ -13,7 +13,8 @@ export function useMediaSession(
     onSeek?: (progress: number) => void;
   },
   coreDuration?: number,
-  coreElapsed?: number
+  coreElapsed?: number,
+  isActive?: boolean
 ) {
   const coreDurationRef = useRef(coreDuration ?? 0);
   const coreElapsedRef = useRef(coreElapsed ?? 0);
@@ -45,8 +46,18 @@ export function useMediaSession(
     return () => { if (throttleRef.current) clearTimeout(throttleRef.current); };
   }, [coreDuration, coreElapsed, updatePosition]);
 
+  // Clear media session when not on a cooking screen
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
+    if (isActive === false) {
+      navigator.mediaSession.playbackState = "none";
+      navigator.mediaSession.metadata = null;
+    }
+  }, [isActive]);
+
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    if (isActive === false) return;
 
     navigator.mediaSession.metadata = new MediaMetadata({
       title: plan.recipe.title,
