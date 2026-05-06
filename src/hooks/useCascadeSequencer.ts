@@ -22,6 +22,7 @@ interface CascadeControls {
   ) => void;
   interrupt: () => Promise<void>;
   replay: () => Promise<void>;
+  getEntryElapsedMs: () => number;
   pauseCascade: () => void;
   resumeCascade: () => boolean;
   isRunning: () => boolean;
@@ -43,6 +44,7 @@ export function useCascadeSequencer(): CascadeControls {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const runningRef = useRef(false);
   const currentEntryIdxRef = useRef(0);
+  const entryStartTimeRef = useRef(0);
   const argsRef = useRef<{
     cascade: CascadeEntry[];
     playAudio: (start: number, end: number) => void;
@@ -115,6 +117,7 @@ export function useCascadeSequencer(): CascadeControls {
         for (let i = 0; i < cascade.length; i++) {
           if (abortRef.current) break;
           currentEntryIdxRef.current = i;
+          entryStartTimeRef.current = Date.now();
           const entry = cascade[i];
 
           switch (entry.type) {
@@ -236,5 +239,10 @@ export function useCascadeSequencer(): CascadeControls {
 
   const isRunning = useCallback(() => runningRef.current, []);
 
-  return { state, start, interrupt, replay, pauseCascade, resumeCascade, isRunning };
+  const getEntryElapsedMs = useCallback(() => {
+    if (!runningRef.current) return 0;
+    return Date.now() - entryStartTimeRef.current;
+  }, []);
+
+  return { state, start, interrupt, replay, getEntryElapsedMs, pauseCascade, resumeCascade, isRunning };
 }

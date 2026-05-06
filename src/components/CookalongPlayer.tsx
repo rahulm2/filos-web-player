@@ -191,12 +191,18 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const handleBack = useCallback(async () => {
     const effective = pacing.state === "PAUSED" ? pacing.previousState : pacing.state;
     if (effective === "WAITING" || effective === "PHASE_GATE") {
-      track("step_back", { from_phase: pacing.phaseIndex, from_step: currentStep?.step_id, action: "replay_cascade" });
-      if (pacing.state === "PAUSED") {
-        pacing.dispatch({ type: "RESUME" });
+      // If the current cascade entry just started (< 3s), go to previous step.
+      // Otherwise replay the current heartbeat/elastic from the start.
+      const elapsed = cascade.getEntryElapsedMs();
+      if (elapsed > 3000) {
+        track("step_back", { from_phase: pacing.phaseIndex, from_step: currentStep?.step_id, action: "replay_cascade" });
+        if (pacing.state === "PAUSED") {
+          pacing.dispatch({ type: "RESUME" });
+        }
+        await cascade.replay();
+        return;
       }
-      await cascade.replay();
-      return;
+      // Fall through to normal GO_BACK (previous step)
     }
     engine.pause();
     if (cascade.state.isRunning) await cascade.interrupt();
