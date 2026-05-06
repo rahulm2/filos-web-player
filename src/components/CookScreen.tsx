@@ -84,7 +84,7 @@ export function CookScreen({
       </div>
 
       {/* Center content */}
-      <div className="flex flex-1 flex-col items-center justify-center">
+      <div className="flex flex-1 min-h-0 flex-col items-center justify-center overflow-hidden">
         {/* Creator photo */}
         <div className="relative h-28 w-28 overflow-hidden rounded-full">
           <Image
