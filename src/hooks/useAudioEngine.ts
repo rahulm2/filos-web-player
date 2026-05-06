@@ -115,6 +115,20 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     };
   }, [audioUrl]);
 
+  // Cleanup audio + AudioContext on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
+      if (ctxRef.current) {
+        ctxRef.current.close().catch(() => {});
+        ctxRef.current = null;
+      }
+    };
+  }, []);
+
   const init = useCallback(async () => {
     if (ctxRef.current) return;
 
