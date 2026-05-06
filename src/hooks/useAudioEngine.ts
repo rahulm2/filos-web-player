@@ -242,5 +242,12 @@ export function useAudioEngine(audioUrl: string): AudioEngine {
     audio.preservesPitch = true;
   }, []);
 
-  return { audioRef, analyserRef, isReady, isBuffering, preloadProgress, init, playFrom, pause, resume, fadeOut, getCurrentTime, setSpeed };
+  // Suspend the AudioContext so the browser removes the tab audio icon.
+  // Call this when leaving the cooking screen (complete / abandon / restart).
+  const suspendContext = useCallback(() => {
+    audioRef.current?.pause();
+    ctxRef.current?.suspend().catch(() => {});
+  }, []);
+
+  return { audioRef, analyserRef, isReady, isBuffering, preloadProgress, init, playFrom, pause, resume, fadeOut, getCurrentTime, setSpeed, suspendContext };
 }

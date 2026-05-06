@@ -158,7 +158,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     }
 
     if (pacing.state === "COMPLETE") {
-      engine.pause();
+      engine.suspendContext();
       cascade.interrupt();
       track("session_complete", { recipe_title: plan.recipe.title, creator: plan.recipe.creator });
     }
@@ -291,14 +291,14 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   seekRef.current = handleSeek;
 
   const handleRestart = useCallback(() => {
-    engine.pause();
+    engine.suspendContext();
     cascade.interrupt();
     setShowAbandon(false);
     pacing.dispatch({ type: "RESTART" });
   }, [engine, cascade, pacing]);
 
   const handleEndSession = useCallback(() => {
-    engine.pause();
+    engine.suspendContext();
     if (cascade.isRunning()) cascade.pauseCascade();
     pacing.dispatch({ type: "PAUSE" });
     setShowAbandon(true);
