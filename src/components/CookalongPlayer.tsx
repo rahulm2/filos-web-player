@@ -334,6 +334,8 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
             isPaused={true}
             onResume={handleResume}
             onEnd={handleEndSession}
+            onBack={handleBack}
+            onRepeat={handleRepeat}
           />
         );
       }
@@ -383,6 +385,8 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
           onEnd={handleEndSession}
+          onBack={handleBack}
+          onRepeat={handleRepeat}
         />
       );
 
