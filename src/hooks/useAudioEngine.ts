@@ -23,6 +23,7 @@ interface AudioEngine {
   fadeOut: () => Promise<void>;
   getCurrentTime: () => number;
   setSpeed: (speed: number) => void;
+  suspendContext: () => void;
 }
 
 export function useAudioEngine(audioUrl: string): AudioEngine {
