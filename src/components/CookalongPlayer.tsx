@@ -191,18 +191,28 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const handleBack = useCallback(async () => {
     const effective = pacing.state === "PAUSED" ? pacing.previousState : pacing.state;
     if (effective === "WAITING" || effective === "PHASE_GATE") {
-      // If the current cascade entry just started (< 3s), go to previous step.
-      // Otherwise replay the current heartbeat/elastic from the start.
       const elapsed = cascade.getEntryElapsedMs();
       if (elapsed > 3000) {
+        // Deep into the entry — replay current heartbeat/elastic
         track("step_back", { from_phase: pacing.phaseIndex, from_step: currentStep?.step_id, action: "replay_cascade" });
-        if (pacing.state === "PAUSED") {
-          pacing.dispatch({ type: "RESUME" });
-        }
+        if (pacing.state === "PAUSED") pacing.dispatch({ type: "RESUME" });
         await cascade.replay();
         return;
       }
-      // Fall through to normal GO_BACK (previous step)
+      // Early in entry — go to previous step via NAVIGATE (not GO_BACK,
+      // which gets confused by chunkIndex during WAITING)
+      await cascade.interrupt();
+      track("step_back", { from_phase: pacing.phaseIndex, from_step: currentStep?.step_id, action: "prev_step" });
+      if (pacing.stepIndex > 0) {
+        pacing.dispatch({ type: "NAVIGATE", phaseIndex: pacing.phaseIndex, stepIndex: pacing.stepIndex - 1 });
+      } else if (pacing.phaseIndex > 0) {
+        const prevPhase = plan.phases[pacing.phaseIndex - 1];
+        pacing.dispatch({ type: "NAVIGATE", phaseIndex: pacing.phaseIndex - 1, stepIndex: prevPhase.steps.length - 1 });
+      } else {
+        // First step of first phase — replay current step
+        pacing.dispatch({ type: "NAVIGATE", phaseIndex: 0, stepIndex: 0 });
+      }
+      return;
     }
     engine.pause();
     if (cascade.state.isRunning) await cascade.interrupt();
@@ -211,7 +221,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
       from_step: currentStep?.step_id,
     });
     pacing.dispatch({ type: "GO_BACK" });
-  }, [engine, cascade, pacing, track, currentStep]);
+  }, [engine, cascade, pacing, track, currentStep, plan]);
 
   const handleRepeat = useCallback(async () => {
     const effective = pacing.state === "PAUSED" ? pacing.previousState : pacing.state;
