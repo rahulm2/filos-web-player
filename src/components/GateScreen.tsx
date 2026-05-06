@@ -64,6 +64,7 @@ export function GateScreen({
       </div>
 
       {/* Share + phase label + exit */}
+      {/* Phase label + actions */}
       <div className="mt-3 flex items-center justify-between">
         <ShareButton variant="dark" />
         <p className="text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
@@ -76,6 +77,17 @@ export function GateScreen({
         >
           &times;
         </button>
+        <div className="flex items-center gap-3">
+          {onEnd && (
+            <button
+              onClick={onEnd}
+              className="cursor-pointer text-[11px] text-[#5C5347] transition-colors hover:text-[#887B6C]"
+            >
+              End
+            </button>
+          )}
+          <ShareButton variant="dark" />
+        </div>
       </div>
 
       {/* Center content */}

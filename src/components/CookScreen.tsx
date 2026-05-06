@@ -79,6 +79,17 @@ export function CookScreen({
         >
           &times;
         </button>
+        <div className="flex items-center gap-3">
+          {onEnd && (
+            <button
+              onClick={onEnd}
+              className="cursor-pointer text-[11px] text-[#5C5347] transition-colors hover:text-[#887B6C]"
+            >
+              End
+            </button>
+          )}
+          <ShareButton variant="dark" />
+        </div>
       </div>
 
       {/* Center content */}
