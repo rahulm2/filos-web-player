@@ -75,7 +75,7 @@ export function CompleteScreen({ plan, onRestart }: { plan: PlaybackPlan; onRest
 
         {/* Header */}
         <div className="mt-8 text-center">
-          <div className="relative mx-auto h-14 w-14 overflow-hidden rounded-full">
+          <div className="relative mx-auto h-[98px] w-[98px] overflow-hidden rounded-full">
             <Image
               src={plan.recipe.creator_photo_url}
               alt={plan.recipe.creator}
