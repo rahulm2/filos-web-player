@@ -55,7 +55,7 @@ export function CookScreen({
   onEnd?: () => void;
 }) {
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#2A231D] px-5 py-6">
+    <div className="flex h-[100dvh] overflow-hidden flex-col bg-[#2A231D] px-5 py-6">
       {/* Top bar */}
       <div>
         <ProgressBar
@@ -72,13 +72,6 @@ export function CookScreen({
         <p className="text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
           {currentPhase.phase_name}
         </p>
-        <button
-          onClick={onExit}
-          className="text-[26px] leading-none text-[#887B6C] hover:text-[#F5F0EB] transition-colors cursor-pointer"
-          aria-label="Exit cook"
-        >
-          &times;
-        </button>
         <div className="flex items-center gap-3">
           {onEnd && (
             <button
@@ -87,9 +80,7 @@ export function CookScreen({
             >
               End
             </button>
-          )}
-          <ShareButton variant="dark" />
-        </div>
+          )}        </div>
       </div>
 
       {/* Center content */}
