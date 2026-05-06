@@ -2,7 +2,7 @@
   "recipe": {
     "title": "Tomato Risotto",
     "creator": "Clare Langan",
-    "creator_photo_url": "https://randomuser.me/api/portraits/women/68.jpg",
+    "creator_photo_url": "/images/clare-photo.jpeg",
     "recipe_photo_url": "/images/tomato-risotto.jpg",
     "audio_url": "/audio/tomato-risotto.mp3",
     "total_duration_seconds": 3276,
