@@ -137,23 +137,29 @@ export function StepNavigator({
         <div className="flex rounded-lg bg-[#352E27] p-0.5">
           <button
             onClick={() => toggleTab("steps")}
-            className={`cursor-pointer rounded-md px-4 py-1.5 text-[12px] font-medium transition-all ${
+            className={`flex cursor-pointer items-center gap-1 rounded-md px-4 py-1.5 text-[12px] font-medium transition-all ${
               activeTab === "steps"
                 ? "bg-[#F5F0EB] text-[#2A231D]"
                 : "text-[#887B6C] hover:text-[#F5F0EB]"
             }`}
           >
             Steps
+            {activeTab === "steps" && (
+              <span className="text-[10px] leading-none opacity-50">&times;</span>
+            )}
           </button>
           <button
             onClick={() => toggleTab("ingredients")}
-            className={`cursor-pointer rounded-md px-4 py-1.5 text-[12px] font-medium transition-all ${
+            className={`flex cursor-pointer items-center gap-1 rounded-md px-4 py-1.5 text-[12px] font-medium transition-all ${
               activeTab === "ingredients"
                 ? "bg-[#F5F0EB] text-[#2A231D]"
                 : "text-[#887B6C] hover:text-[#F5F0EB]"
             }`}
           >
             Ingredients
+            {activeTab === "ingredients" && (
+              <span className="text-[10px] leading-none opacity-50">&times;</span>
+            )}
           </button>
         </div>
       </div>
