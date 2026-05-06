@@ -104,15 +104,23 @@ function createReducer(plan: PlaybackPlan) {
         return { ...s, state: s.previousState ?? "PLAYING", previousState: null };
 
       case "GO_BACK": {
+        // If in WAITING or PAUSED-from-WAITING, the user is still on the
+        // current step (elastic/heartbeat audio). "Go back" replays it.
+        const effectiveGoBack = s.state === "PAUSED" ? s.previousState : s.state;
+        if (effectiveGoBack === "WAITING") {
+          return { ...s, state: "PLAYING", previousState: null, chunkIndex: 0 };
+        }
+
         // Go to previous chunk or step
         if (s.chunkIndex > 0) {
-          return { ...s, state: "PLAYING", chunkIndex: s.chunkIndex - 1 };
+          return { ...s, state: "PLAYING", previousState: null, chunkIndex: s.chunkIndex - 1 };
         }
         if (s.stepIndex > 0) {
           const prevStep = plan.phases[s.phaseIndex].steps[s.stepIndex - 1];
           return {
             ...s,
             state: "PLAYING",
+            previousState: null,
             stepIndex: s.stepIndex - 1,
             chunkIndex: prevStep.core_chunks.length - 1,
           };
@@ -123,17 +131,18 @@ function createReducer(plan: PlaybackPlan) {
           return {
             ...s,
             state: "PLAYING",
+            previousState: null,
             phaseIndex: s.phaseIndex - 1,
             stepIndex: prevPhase.steps.length - 1,
             chunkIndex: lastStep.core_chunks.length - 1,
           };
         }
         // Already at start — replay current
-        return { ...s, state: "PLAYING", chunkIndex: 0 };
+        return { ...s, state: "PLAYING", previousState: null, chunkIndex: 0 };
       }
 
       case "REPEAT": {
-        return { ...s, state: "PLAYING", chunkIndex: 0 };
+        return { ...s, state: "PLAYING", previousState: null, chunkIndex: 0 };
       }
 
       case "NAVIGATE": {

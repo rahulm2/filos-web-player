@@ -25,6 +25,7 @@ export function GateScreen({
   currentSpeed,
   isPaused = false,
   onResume,
+  onEnd,
 }: {
   plan: PlaybackPlan;
   currentPhase: Phase;
@@ -42,6 +43,7 @@ export function GateScreen({
   currentSpeed: number;
   isPaused?: boolean;
   onResume?: () => void;
+  onEnd?: () => void;
 }) {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#2A231D] px-5 py-6">
@@ -55,12 +57,22 @@ export function GateScreen({
         />
       </div>
 
-      {/* Phase label + share */}
+      {/* Phase label + actions */}
       <div className="mt-3 flex items-center justify-between">
         <p className="text-[11px] font-medium uppercase tracking-[1.5px] text-[#887B6C]">
           {currentPhase.phase_name}
         </p>
-        <ShareButton variant="dark" />
+        <div className="flex items-center gap-3">
+          {onEnd && (
+            <button
+              onClick={onEnd}
+              className="cursor-pointer text-[11px] text-[#5C5347] transition-colors hover:text-[#887B6C]"
+            >
+              End
+            </button>
+          )}
+          <ShareButton variant="dark" />
+        </div>
       </div>
 
       {/* Center content */}
