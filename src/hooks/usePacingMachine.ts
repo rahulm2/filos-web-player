@@ -104,12 +104,8 @@ function createReducer(plan: PlaybackPlan) {
         return { ...s, state: s.previousState ?? "PLAYING", previousState: null };
 
       case "GO_BACK": {
-        // If in WAITING or PAUSED-from-WAITING, the user is still on the
-        // current step (elastic/heartbeat audio). "Go back" replays it.
-        const effectiveGoBack = s.state === "PAUSED" ? s.previousState : s.state;
-        if (effectiveGoBack === "WAITING") {
-          return { ...s, state: "PLAYING", previousState: null, chunkIndex: 0 };
-        }
+        // NOTE: WAITING/PHASE_GATE "go back" is handled at the component level
+        // (restarts cascade) — the reducer only handles PLAYING/PAUSED-from-PLAYING.
 
         // Go to previous chunk or step
         if (s.chunkIndex > 0) {
