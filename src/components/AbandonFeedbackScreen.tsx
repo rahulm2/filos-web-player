@@ -109,9 +109,6 @@ export function AbandonFeedbackScreen({
             <h2 className="mt-5 text-center font-[family-name:var(--font-fraunces)] text-[20px] text-[#F5F0EB]">
               Thanks for letting us know
             </h2>
-            <p className="mt-1.5 text-center text-[13px] text-[#887B6C]">
-              Your feedback helps {creatorFirst} improve.
-            </p>
 
             <div className="mt-6 flex gap-3">
               <button
