@@ -1,6 +1,6 @@
 {
-  "name": "filos",
-  "short_name": "filos",
+  "name": "CookAlong",
+  "short_name": "CookAlong",
   "description": "Guided cookalong — cook hands-free with your favorite creator's voice",
   "start_url": "/",
   "display": "standalone",

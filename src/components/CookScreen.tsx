@@ -33,6 +33,7 @@ export function CookScreen({
   onSpeedChange,
   currentSpeed,
   onExit,
+  onEnd,
 }: {
   plan: PlaybackPlan;
   currentPhase: Phase;

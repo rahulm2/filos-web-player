@@ -65,8 +65,13 @@ type EventName =
   | "elastic_interrupted"
   | "session_complete"
   | "session_abandon"
+  | "session_abandon_feedback"
   | "survey_response"
-  | "form_submit";
+  | "form_submit"
+  | "step_navigate"
+  | "step_back"
+  | "step_repeat"
+  | "step_skip";
 
 export function useAnalytics() {
   useEffect(() => {

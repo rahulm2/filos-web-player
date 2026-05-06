@@ -15,6 +15,7 @@ import { PreCookScreen } from "./PreCookScreen";
 import { CookScreen } from "./CookScreen";
 import { GateScreen } from "./GateScreen";
 import { CompleteScreen } from "./CompleteScreen";
+import { AbandonFeedbackScreen } from "./AbandonFeedbackScreen";
 
 export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const engine = useAudioEngine(plan.recipe.audio_url);
@@ -25,6 +26,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
   const isResuming = useRef(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [showAbandon, setShowAbandon] = useState(false);
   // iOS uses WebKit for all browsers — playbackRate glitches through MediaElementSourceNode
   const isIOSRef = useRef(false);
   if (typeof navigator !== "undefined" && !isIOSRef.current) {
@@ -56,6 +58,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
       pacing.dispatch({ type: "ADVANCE" });
     } else if (pacing.state === "PLAYING") {
       engine.pause();
+      track("step_skip", { step_id: currentStep?.step_id, phase_index: pacing.phaseIndex });
       pacing.dispatch({ type: "ADVANCE" });
     }
   }, [pacing, cascade, engine, currentStep, track]);
@@ -185,27 +188,73 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
     pacing.dispatch({ type: "RESUME" });
   }, [cascade, pacing, engine]);
 
-  const handleBack = useCallback(() => {
+  const handleBack = useCallback(async () => {
+    const effective = pacing.state === "PAUSED" ? pacing.previousState : pacing.state;
+    if (effective === "WAITING" || effective === "PHASE_GATE") {
+      const elapsed = cascade.getEntryElapsedMs();
+      if (elapsed > 3000) {
+        // Deep into the entry — replay current heartbeat/elastic
+        track("step_back", { from_phase: pacing.phaseIndex, from_step: currentStep?.step_id, action: "replay_cascade" });
+        if (pacing.state === "PAUSED") pacing.dispatch({ type: "RESUME" });
+        await cascade.replay();
+        return;
+      }
+      // Early in entry — go to previous step via NAVIGATE (not GO_BACK,
+      // which gets confused by chunkIndex during WAITING)
+      await cascade.interrupt();
+      track("step_back", { from_phase: pacing.phaseIndex, from_step: currentStep?.step_id, action: "prev_step" });
+      if (pacing.stepIndex > 0) {
+        pacing.dispatch({ type: "NAVIGATE", phaseIndex: pacing.phaseIndex, stepIndex: pacing.stepIndex - 1 });
+      } else if (pacing.phaseIndex > 0) {
+        const prevPhase = plan.phases[pacing.phaseIndex - 1];
+        pacing.dispatch({ type: "NAVIGATE", phaseIndex: pacing.phaseIndex - 1, stepIndex: prevPhase.steps.length - 1 });
+      } else {
+        // First step of first phase — replay current step
+        pacing.dispatch({ type: "NAVIGATE", phaseIndex: 0, stepIndex: 0 });
+      }
+      return;
+    }
     engine.pause();
-    if (cascade.state.isRunning) cascade.interrupt();
+    if (cascade.state.isRunning) await cascade.interrupt();
+    track("step_back", {
+      from_phase: pacing.phaseIndex,
+      from_step: currentStep?.step_id,
+    });
     pacing.dispatch({ type: "GO_BACK" });
-  }, [engine, cascade, pacing]);
+  }, [engine, cascade, pacing, track, currentStep, plan]);
 
-  const handleRepeat = useCallback(() => {
+  const handleRepeat = useCallback(async () => {
+    const effective = pacing.state === "PAUSED" ? pacing.previousState : pacing.state;
+    if (effective === "WAITING" || effective === "PHASE_GATE") {
+      track("step_repeat", { step_id: currentStep?.step_id, action: "replay_cascade" });
+      if (pacing.state === "PAUSED") {
+        pacing.dispatch({ type: "RESUME" });
+      }
+      await cascade.replay();
+      return;
+    }
     // Seek to start of current step's first chunk and play
     const step = plan.phases[pacing.phaseIndex]?.steps[pacing.stepIndex];
     const firstChunk = step?.core_chunks[0];
     if (firstChunk) {
       engine.playFrom(firstChunk.start_time, firstChunk.end_time);
     }
+    track("step_repeat", { step_id: currentStep?.step_id });
     pacing.dispatch({ type: "REPEAT" });
-  }, [engine, pacing, plan]);
+  }, [engine, pacing, plan, track, currentStep, cascade]);
 
   const handleNavigate = useCallback(async (phaseIndex: number, stepIndex: number) => {
     engine.pause();
     if (cascade.state.isRunning) await cascade.interrupt();
+    track("step_navigate", {
+      from_phase: pacing.phaseIndex,
+      from_step: pacing.stepIndex,
+      to_phase: phaseIndex,
+      to_step: stepIndex,
+      to_step_id: plan.phases[phaseIndex]?.steps[stepIndex]?.step_id,
+    });
     pacing.dispatch({ type: "NAVIGATE", phaseIndex, stepIndex });
-  }, [engine, cascade, pacing]);
+  }, [engine, cascade, pacing, track, plan]);
 
   const handleSeek = useCallback((progress: number) => {
     const target = coreProgress.resolveSeek(progress);
@@ -235,10 +284,35 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
 
   const handleRestart = useCallback(() => {
     engine.pause();
+    setShowAbandon(false);
     pacing.dispatch({ type: "RESTART" });
   }, [engine, pacing]);
 
+  const handleEndSession = useCallback(() => {
+    engine.pause();
+    if (cascade.state.isRunning) cascade.pauseCascade();
+    pacing.dispatch({ type: "PAUSE" });
+    setShowAbandon(true);
+  }, [engine, cascade, pacing]);
+
+  const handleResumeFromAbandon = useCallback(() => {
+    setShowAbandon(false);
+    handleResume();
+  }, [handleResume]);
+
   // Render based on state
+  if (showAbandon) {
+    return (
+      <AbandonFeedbackScreen
+        plan={plan}
+        lastStepId={currentStep?.step_id ?? ""}
+        phaseIndex={pacing.phaseIndex}
+        stepIndex={pacing.stepIndex}
+        onResume={handleResumeFromAbandon}
+        onRestart={handleRestart}
+      />
+    );
+  }
   switch (pacing.state) {
     case "LOADING":
       return <PreCookScreen plan={plan} onStart={handleStart} isInitializing={isInitializing} preloadProgress={engine.preloadProgress} />;
@@ -264,6 +338,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
           onExit={handleRestart}
+          onEnd={handleEndSession}
         />
       );
 
@@ -294,6 +369,9 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
             isPaused={true}
             onResume={handleResume}
             onExit={handleRestart}
+            onEnd={handleEndSession}
+            onBack={handleBack}
+            onRepeat={handleRepeat}
           />
         );
       }
@@ -316,6 +394,7 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
           onExit={handleRestart}
+          onEnd={handleEndSession}
         />
       );
     }
@@ -343,6 +422,9 @@ export function CookalongPlayer({ plan }: { plan: PlaybackPlan }) {
           onSpeedChange={isIOSRef.current ? undefined : handleSpeedChange}
           currentSpeed={playbackSpeed}
           onExit={handleRestart}
+          onEnd={handleEndSession}
+          onBack={handleBack}
+          onRepeat={handleRepeat}
         />
       );
 
